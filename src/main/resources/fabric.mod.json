@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "tree_of_yorishiro",
+	"version": "${version}",
+	"name": "Tree of Yorishiro",
+	"description": "A raising mod centered around a sacred tree and tiny spirits.",
+	"authors": ["LichtMeilleur"],
+	"contact": {
+		"sources": "（あとでGitHubURL）"
+	},
+	"license": "All Rights Reserved",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod"
+		],
+		"client": [
+			"com.licht_meilleur.tree_of_yorishiro.client.TreeofYorishiroClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.14.0",
+		"minecraft": "1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
