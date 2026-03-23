@@ -9,11 +9,15 @@ import net.minecraft.registry.Registry;
 
 public class ModBlockEntities {
 
-    public static final BlockEntityType<TreeOfYorishiroBlockEntity> TREE_OF_YORISHIRO = Registry.register(
-            Registries.BLOCK_ENTITY_TYPE,
-            TreeofYorishiroMod.id("tree_of_yorishiro"),
-            FabricBlockEntityTypeBuilder.create(TreeOfYorishiroBlockEntity::new, ModBlocks.TREE_OF_YORISHIRO).build()
-    );
+    public static final BlockEntityType<TreeOfYorishiroBlockEntity> TREE_OF_YORISHIRO =
+            Registry.register(
+                    Registries.BLOCK_ENTITY_TYPE,
+                    TreeofYorishiroMod.id("tree_of_yorishiro"),
+                    FabricBlockEntityTypeBuilder.create(
+                            TreeOfYorishiroBlockEntity::new,
+                            ModBlocks.TREE_OF_YORISHIRO
+                    ).build()
+            );
 
     public static void register() {
         TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering block entities");

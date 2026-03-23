@@ -13,10 +13,10 @@ public class ModBlocks {
 
     public static final Block BUD_OF_YORISHIRO = register("bud_of_yorishiro",
             new BudOfYorishiroBlock(AbstractBlock.Settings.create()
-                    .noCollision()
                     .breakInstantly()
                     .sounds(BlockSoundGroup.GRASS)
-                    .nonOpaque()));
+                    .nonOpaque()
+                    .ticksRandomly()));
 
     public static final Block TREE_OF_YORISHIRO = register("tree_of_yorishiro",
             new TreeOfYorishiroBlock(AbstractBlock.Settings.create()

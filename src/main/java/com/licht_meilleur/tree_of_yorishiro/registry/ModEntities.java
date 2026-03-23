@@ -15,7 +15,7 @@ public class ModEntities {
             TreeofYorishiroMod.id("chibishiro"),
             FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ChibishiroEntity::new)
                     .dimensions(EntityDimensions.fixed(0.6f, 0.9f))
-                    .trackRangeBlocks(8)
+                    .trackRangeBlocks(80)
                     .trackedUpdateRate(3)
                     .build()
     );

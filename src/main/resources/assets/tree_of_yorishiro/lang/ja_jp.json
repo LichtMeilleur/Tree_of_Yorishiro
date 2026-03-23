@@ -1,0 +1,33 @@
+{
+  "screen.tree_of_yorishiro.title": "よりしろの樹",
+  "screen.tree_of_yorishiro.genki": "げんき",
+  "screen.tree_of_yorishiro.kashikosa": "かしこさ",
+  "screen.tree_of_yorishiro.chikara": "ちから",
+  "screen.tree_of_yorishiro.stress": "ストレス",
+  "screen.tree_of_yorishiro.meal": "しょくじ",
+  "screen.tree_of_yorishiro.study": "べんきょう",
+  "screen.tree_of_yorishiro.exercise": "うんどう",
+  "screen.tree_of_yorishiro.play": "あそび",
+  "screen.tree_of_yorishiro.adventure_menu": "ぼうけんメニュー",
+  "screen.tree_of_yorishiro.send_adventure": "5にんのちびしろを ぼうけんにいかせる",
+  "screen.tree_of_yorishiro.tab_white": "W",
+  "screen.tree_of_yorishiro.tab_red": "R",
+  "screen.tree_of_yorishiro.tab_blue": "B",
+  "screen.tree_of_yorishiro.tab_yellow": "Y",
+  "screen.tree_of_yorishiro.tab_purple": "P",
+  "screen.tree_of_yorishiro.tab_adventure": "ADV",
+  "screen.tree_of_yorishiro.back": "もどる",
+  "screen.tree_of_yorishiro.food_required": "ひつよう素材",
+  "screen.tree_of_yorishiro.slot_meal": "たべもの",
+  "item.tree_of_yorishiro.study_book": "がくしゅうぼん",
+  "item.tree_of_yorishiro.study_set": "べんきょうセット",
+  "item.tree_of_yorishiro.hard_study_set": "ガリべんセット",
+
+  "item.tree_of_yorishiro.headband": "きあいはちまき",
+  "item.tree_of_yorishiro.punching_set": "パンチングセット",
+  "item.tree_of_yorishiro.running_set": "ランニングセット",
+
+  "item.tree_of_yorishiro.ball": "ボール",
+  "item.tree_of_yorishiro.bubble_set": "しゃぼんセット",
+  "item.tree_of_yorishiro.game": "ゲーム"
+}

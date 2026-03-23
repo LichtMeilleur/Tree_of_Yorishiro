@@ -1,6 +1,11 @@
 package com.licht_meilleur.tree_of_yorishiro;
 
-import com.licht_meilleur.tree_of_yorishiro.registry.*;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModEntities;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModItemGroups;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
+import com.licht_meilleur.tree_of_yorishiro.screen.ModScreenHandlers;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -23,6 +28,7 @@ public class TreeofYorishiroMod implements ModInitializer {
         ModItems.register();
         ModBlockEntities.register();
         ModEntities.register();
+        ModScreenHandlers.register();
         ModItemGroups.register();
 
         LOGGER.info("[TreeOfYorishiro] onInitialize done");

@@ -115,7 +115,7 @@
 						"vector": [0, 22, 0]
 					},
 					"scale": {
-						"vector": [0, 3.7, -0.1]
+						"vector": [0, 0, 0]
 					}
 				},
 				"runnning_machine": {
@@ -238,7 +238,7 @@
 						"vector": [0, 26, 0]
 					},
 					"scale": {
-						"vector": [0.1, -0.1, 0.2]
+						"vector": [0.1, 0, 0.2]
 					}
 				},
 				"runnning_machine": {
