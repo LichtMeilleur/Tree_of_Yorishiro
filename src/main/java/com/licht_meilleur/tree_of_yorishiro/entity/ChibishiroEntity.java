@@ -69,6 +69,9 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
+    private net.minecraft.util.math.BlockPos homeTreePos;
+    private java.util.UUID homeTreeUuid;
+
     public ChibishiroEntity(EntityType<? extends PathAwareEntity> type, World world) {
         super(type, world);
     }
@@ -84,6 +87,7 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
     public void setColor(ChibishiroColor color) {
         this.dataTracker.set(COLOR, color.ordinal());
     }
+
 
     public ChibishiroColor getColor() {
         return ChibishiroColor.byIndex(this.dataTracker.get(COLOR));
@@ -128,7 +132,11 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
             if (this.getPos().squaredDistanceTo(center) > maxDistance * maxDistance) {
                 this.getNavigation().startMovingTo(center.x, center.y, center.z, 1.0);
             }
+            if (this.getPos().squaredDistanceTo(center) > 20.0 * 20.0) {
+                this.refreshPositionAndAngles(center.x, center.y, center.z, this.getYaw(), this.getPitch());
+            }
         }
+
 
         int ticks = getAnimTicks();
         if (ticks > 0) {
@@ -328,7 +336,6 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
             return PlayState.CONTINUE;
         }));
     }
-    private net.minecraft.util.math.BlockPos homeTreePos;
 
     public void setHomeTreePos(net.minecraft.util.math.BlockPos pos) {
         this.homeTreePos = pos;
@@ -337,4 +344,23 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
     public net.minecraft.util.math.BlockPos getHomeTreePos() {
         return homeTreePos;
     }
+
+    public void setHomeTreeUuid(java.util.UUID uuid) {
+        this.homeTreeUuid = uuid;
+    }
+
+    public java.util.UUID getHomeTreeUuid() {
+        return homeTreeUuid;
+    }
+    @Override
+    public boolean damage(net.minecraft.entity.damage.DamageSource source, float amount) {
+        return false;
+    }
+    @Override
+    public boolean cannotDespawn() {
+        return true;
+    }
+
+
+
 }

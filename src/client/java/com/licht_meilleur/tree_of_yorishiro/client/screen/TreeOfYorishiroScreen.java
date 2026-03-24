@@ -175,30 +175,31 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
 // 通常画面のときだけ
         if (detailPage == DetailPage.MAIN && selectedTab != 5) {
             if (isInside(mouseX, mouseY, bx, by, 64, 16)) {
-                detailPage = DetailPage.MEAL;
+                setDetailPage(DetailPage.MEAL);
                 return true;
             }
             if (isInside(mouseX, mouseY, bx, by + 24, 64, 16)) {
-                detailPage = DetailPage.STUDY;
+                setDetailPage(DetailPage.STUDY);
                 return true;
             }
             if (isInside(mouseX, mouseY, bx, by + 48, 64, 16)) {
-                detailPage = DetailPage.EXERCISE;
+                setDetailPage(DetailPage.EXERCISE);
                 return true;
             }
             if (isInside(mouseX, mouseY, bx, by + 72, 64, 16)) {
-                detailPage = DetailPage.PLAY;
+                setDetailPage(DetailPage.PLAY);
                 return true;
             }
         }
         if (selectedTab == 5) {
-            detailPage = DetailPage.ADVENTURE;
+            setDetailPage(DetailPage.ADVENTURE);
         } else if (detailPage == DetailPage.ADVENTURE) {
-            detailPage = DetailPage.MAIN;
+            setDetailPage(DetailPage.MAIN);
         }
+
         if (detailPage != DetailPage.MAIN && detailPage != DetailPage.ADVENTURE) {
-            if (isInside(mouseX, mouseY, x + 18, y + 18, 40, 12)) {
-                detailPage = DetailPage.MAIN;
+            if (isInside(mouseX, mouseY, x + 18, y + 28, 40, 12)) {
+                setDetailPage(DetailPage.MAIN);
                 return true;
             }
         }
@@ -427,5 +428,17 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
             };
             default -> Text.empty();
         };
+    }
+    private void setDetailPage(DetailPage page) {
+        this.detailPage = page;
+
+        switch (page) {
+            case MAIN -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.MAIN);
+            case MEAL -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.MEAL);
+            case STUDY -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.STUDY);
+            case EXERCISE -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.EXERCISE);
+            case PLAY -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.PLAY);
+            case ADVENTURE -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.ADVENTURE);
+        }
     }
 }

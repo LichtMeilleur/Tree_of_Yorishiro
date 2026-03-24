@@ -11,6 +11,7 @@ import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.PacketByteBuf;
@@ -32,6 +33,7 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.block.entity.BlockEntityTicker;
 
 
 
@@ -135,5 +137,17 @@ public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         return SHAPE;
+    }
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            World world,
+            BlockState state,
+            BlockEntityType<T> type) {
+
+        return world.isClient ? null : (world1, pos, state1, be) -> {
+            if (be instanceof TreeOfYorishiroBlockEntity yorishiro) {
+                TreeOfYorishiroBlockEntity.tick(world1, pos, state1, yorishiro);
+            }
+        };
     }
 }

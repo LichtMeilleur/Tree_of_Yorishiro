@@ -1,19 +1,32 @@
 package com.licht_meilleur.tree_of_yorishiro.screen;
 
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.inventory.Inventory;
 
 public class TreeOfYorishiroScreenHandler extends ScreenHandler {
 
+    public enum DetailPage {
+        MAIN,
+        MEAL,
+        STUDY,
+        EXERCISE,
+        PLAY,
+        ADVENTURE
+    }
+
     private final BlockPos blockPos;
+    private DetailPage currentPage = DetailPage.MAIN;
 
     // サーバー側
     public TreeOfYorishiroScreenHandler(int syncId, PlayerInventory inventory, BlockPos blockPos) {
@@ -21,15 +34,55 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         this.blockPos = blockPos;
 
         TreeOfYorishiroBlockEntity be = getBlockEntity(inventory.player.getWorld());
-        Inventory inv = be != null ? be.getTrainingInventory() : new net.minecraft.inventory.SimpleInventory(4);
+        Inventory inv = be != null ? be.getTrainingInventory() : new SimpleInventory(4);
 
-        // しょくじ用
-        this.addSlot(new Slot(inv, 0, 110, 70));
+        // slot0 = 食事
+        this.addSlot(new Slot(inv, 0, 110, 70) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.MEAL
+                        && stack.isFood();
+            }
+        });
 
-        // Lv1～Lv3
-        this.addSlot(new Slot(inv, 1, 96, 66));
-        this.addSlot(new Slot(inv, 2, 96, 96));
-        this.addSlot(new Slot(inv, 3, 96, 126));
+        // slot1 = Lv1
+        this.addSlot(new Slot(inv, 1, 96, 66) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
+                    case STUDY -> stack.isOf(ModItems.STUDY_BOOK);
+                    case EXERCISE -> stack.isOf(ModItems.HEADBAND);
+                    case PLAY -> stack.isOf(ModItems.BALL);
+                    default -> false;
+                };
+            }
+        });
+
+        // slot2 = Lv2
+        this.addSlot(new Slot(inv, 2, 96, 96) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
+                    case STUDY -> stack.isOf(ModItems.STUDY_SET);
+                    case EXERCISE -> stack.isOf(ModItems.PUNCHING_SET);
+                    case PLAY -> stack.isOf(ModItems.BUBBLE_SET);
+                    default -> false;
+                };
+            }
+        });
+
+        // slot3 = Lv3
+        this.addSlot(new Slot(inv, 3, 96, 126) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
+                    case STUDY -> stack.isOf(ModItems.HARD_STUDY_SET);
+                    case EXERCISE -> stack.isOf(ModItems.RUNNING_SET);
+                    case PLAY -> stack.isOf(ModItems.GAME);
+                    default -> false;
+                };
+            }
+        });
 
         // プレイヤーインベントリ
         int startX = 48;
@@ -46,7 +99,7 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         }
     }
 
-    // クライアント側（Extended用）
+    // クライアント側
     public TreeOfYorishiroScreenHandler(int syncId, PlayerInventory inventory, PacketByteBuf buf) {
         this(syncId, inventory, buf.readBlockPos());
     }
@@ -59,6 +112,14 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         if (world == null) return null;
         if (!(world.getBlockEntity(blockPos) instanceof TreeOfYorishiroBlockEntity be)) return null;
         return be;
+    }
+
+    public DetailPage getCurrentPage() {
+        return currentPage;
+    }
+
+    public void setCurrentPage(DetailPage page) {
+        this.currentPage = page;
     }
 
     @Override

@@ -31,6 +31,12 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
     private boolean initialized = false;
 
     private final SimpleInventory trainingInventory = new SimpleInventory(4);
+    private int summonCheckCooldown = 0;
+    private java.util.UUID treeId = java.util.UUID.randomUUID();
+
+    public java.util.UUID getTreeId() {
+        return treeId;
+    }
 
     public TreeOfYorishiroBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TREE_OF_YORISHIRO, pos, state);
@@ -86,6 +92,10 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
 
         initialized = nbt.getBoolean("Initialized");
         chibis.clear();
+        if (nbt.containsUuid("TreeId")) {
+            treeId = nbt.getUuid("TreeId");
+        }
+
 
         NbtList list = nbt.getList("Chibis", 10);
         for (int i = 0; i < list.size(); i++) {
@@ -104,6 +114,9 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
 
         nbt.putBoolean("Initialized", initialized);
 
+        if (treeId != null) {
+            nbt.putUuid("TreeId", treeId);
+        }
         NbtList list = new NbtList();
         for (TreeChibishiroData data : chibis) {
             NbtCompound entry = new NbtCompound();
@@ -134,6 +147,62 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
     public void writeScreenOpeningData(ServerPlayerEntity player, PacketByteBuf buf) {
         buf.writeBlockPos(this.pos);
     }
+    public static void tick(net.minecraft.world.World world, net.minecraft.util.math.BlockPos pos,
+                            net.minecraft.block.BlockState state, TreeOfYorishiroBlockEntity be) {
+        if (world.isClient) return;
+
+        be.initDefaultChibisIfNeeded();
+
+        if (be.summonCheckCooldown > 0) {
+            be.summonCheckCooldown--;
+            return;
+        }
+        be.summonCheckCooldown = 40; // 2秒ごと
+
+        be.ensureChibishiros();
+    }
+
+    private void ensureChibishiros() {
+        if (!(this.world instanceof net.minecraft.server.world.ServerWorld sw)) return;
+
+        for (TreeChibishiroData data : this.chibis) {
+            com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity found = null;
+
+            if (data.getEntityUuid() != null) {
+                net.minecraft.entity.Entity e = sw.getEntity(data.getEntityUuid());
+                if (e instanceof com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity c && c.isAlive()) {
+                    found = c;
+                }
+            }
+
+            if (found == null) {
+                spawnOneChibi(sw, data);
+            }
+        }
+
+        markDirty();
+    }
+    private void spawnOneChibi(net.minecraft.server.world.ServerWorld sw, TreeChibishiroData data) {
+        com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity chibi =
+                new com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity(
+                        com.licht_meilleur.tree_of_yorishiro.registry.ModEntities.CHIBISHIRO,
+                        sw
+                );
+
+        chibi.setColor(data.getColor());
+        chibi.setHomeTreePos(this.pos);
+        chibi.refreshPositionAndAngles(
+                this.pos.getX() + 0.5 + (sw.random.nextDouble() - 0.5) * 2.0,
+                this.pos.getY() + 1.0,
+                this.pos.getZ() + 0.5 + (sw.random.nextDouble() - 0.5) * 2.0,
+                0f,
+                0f
+        );
+
+        sw.spawnEntity(chibi);
+        data.setEntityUuid(chibi.getUuid());
+    }
+
 
 
 }

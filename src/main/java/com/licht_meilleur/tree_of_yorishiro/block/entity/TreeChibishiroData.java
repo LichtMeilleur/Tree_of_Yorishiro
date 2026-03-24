@@ -14,6 +14,7 @@ public class TreeChibishiroData {
     private boolean training;
     private boolean adventuring;
     private ChibishiroAnimState animState;
+    private java.util.UUID entityUuid;
 
     public TreeChibishiroData(ChibishiroColor color) {
         this.color = color;
@@ -45,6 +46,7 @@ public class TreeChibishiroData {
     public int getStress() {
         return stress;
     }
+
 
     public boolean isTraining() {
         return training;
@@ -85,6 +87,13 @@ public class TreeChibishiroData {
     public void setAnimState(ChibishiroAnimState animState) {
         this.animState = animState;
     }
+    public java.util.UUID getEntityUuid() {
+        return entityUuid;
+    }
+
+    public void setEntityUuid(java.util.UUID entityUuid) {
+        this.entityUuid = entityUuid;
+    }
 
     public void writeNbt(NbtCompound nbt) {
         nbt.putString("Color", color.getId());
@@ -95,6 +104,9 @@ public class TreeChibishiroData {
         nbt.putBoolean("Training", training);
         nbt.putBoolean("Adventuring", adventuring);
         nbt.putString("AnimState", animState.name());
+        if (entityUuid != null) {
+            nbt.putUuid("EntityUuid", entityUuid);
+        }
     }
 
     public static TreeChibishiroData fromNbt(NbtCompound nbt) {
@@ -119,6 +131,10 @@ public class TreeChibishiroData {
             data.animState = animName.isEmpty() ? ChibishiroAnimState.IDLE : ChibishiroAnimState.valueOf(animName);
         } catch (IllegalArgumentException ignored) {
             data.animState = ChibishiroAnimState.IDLE;
+        }
+
+        if (nbt.containsUuid("EntityUuid")) {
+            data.entityUuid = nbt.getUuid("EntityUuid");
         }
 
         return data;
