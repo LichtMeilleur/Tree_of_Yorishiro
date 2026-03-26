@@ -3,6 +3,7 @@ package com.licht_meilleur.tree_of_yorishiro.registry;
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
 import com.licht_meilleur.tree_of_yorishiro.block.BudOfYorishiroBlock;
 import com.licht_meilleur.tree_of_yorishiro.block.TreeOfYorishiroBlock;
+import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.registry.Registries;
@@ -31,4 +32,6 @@ public class ModBlocks {
     public static void register() {
         TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering blocks");
     }
+
+
 }

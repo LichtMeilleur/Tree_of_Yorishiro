@@ -37,5 +37,18 @@ public enum ChibishiroAnimState {
     GAME3_START,
     GAME3_LOOP,
 
-    TREASURE_START
+    TREASURE_START,
+
+    // 追加: TASK系
+    MEAL_TASK,
+    STUDY1_TASK,
+    STUDY2_TASK,
+    STUDY3_TASK,
+    TRAINING1_TASK,
+    TRAINING2_TASK,
+    TRAINING3_TASK,
+    GAME1_TASK,
+    GAME2_TASK,
+    GAME3_TASK,
+    SLEEP_TASK
 }

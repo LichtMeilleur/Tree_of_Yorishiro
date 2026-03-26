@@ -1029,10 +1029,10 @@
 				},
 				"dorasuke_punching": {
 					"position": {
-						"vector": [0, 26, 0]
+						"vector": [0, -1, 0]
 					},
 					"scale": {
-						"vector": [0, 0.1, 0]
+						"vector": [1, 1, 1]
 					}
 				},
 				"runnning_machine": {
@@ -3723,7 +3723,7 @@
 				}
 			}
 		},
-		"animation.model.stady2": {
+		"animation.model.study2": {
 			"animation_length": 4,
 			"bones": {
 				"MAllBody": {
@@ -3842,6 +3842,11 @@
 						"vector": [0, 1, -0.1]
 					}
 				},
+				"buble_straw": {
+					"scale": {
+						"vector": [0.1, 1, 1]
+					}
+				},
 				"buble_bottle": {
 					"scale": {
 						"vector": [0, 1, 0.4]
@@ -3858,7 +3863,7 @@
 			}
 		},
 		"animation.model.study3start": {
-			"animation_length": 1.25,
+			"animation_length": 1.2917,
 			"bones": {
 				"MAllBody": {
 					"position": {

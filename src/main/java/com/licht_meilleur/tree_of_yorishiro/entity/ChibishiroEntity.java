@@ -9,7 +9,9 @@ import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.mob.PathAwareEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -17,6 +19,7 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animation.*;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import com.licht_meilleur.tree_of_yorishiro.entity.ai.ChibishiroAssignedTaskGoal;
 
 public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
@@ -82,7 +85,11 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
         this.dataTracker.startTracking(COLOR, 0);
         this.dataTracker.startTracking(ANIM_STATE, ChibishiroAnimState.IDLE.ordinal());
         this.dataTracker.startTracking(ANIM_TICKS, 0);
+
+        this.dataTracker.startTracking(DISPLAY_FOOD, ItemStack.EMPTY);
     }
+
+
 
     public void setColor(ChibishiroColor color) {
         this.dataTracker.set(COLOR, color.ordinal());
@@ -111,7 +118,10 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
     @Override
     protected void initGoals() {
-        this.goalSelector.add(1, new WanderAroundFarGoal(this, 0.8));
+        this.goalSelector.add(0, new ChibishiroAssignedTaskGoal(this));
+
+        // 通常時の待機/うろうろ
+        this.goalSelector.add(1, new WanderAroundFarGoal(this, 0.8D));
         this.goalSelector.add(2, new LookAroundGoal(this));
     }
 
@@ -145,28 +155,66 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
             if (ticks - 1 <= 0) {
                 ChibishiroAnimState state = getAnimState();
                 switch (state) {
-                    case TRAINING1_START -> setAnimState(ChibishiroAnimState.TRAINING1_LOOP);
-                    case TRAINING2_START -> setAnimState(ChibishiroAnimState.TRAINING2_LOOP);
-                    case TRAINING3_START -> setAnimState(ChibishiroAnimState.TRAINING3_LOOP);
+                    case TRAINING1_START -> {
+                        setAnimState(ChibishiroAnimState.TRAINING1_LOOP);
+                        return;
+                    }
+                    case TRAINING2_START -> {
+                        setAnimState(ChibishiroAnimState.TRAINING2_LOOP);
+                        return;
+                    }
+                    case TRAINING3_START -> {
+                        setAnimState(ChibishiroAnimState.TRAINING3_LOOP);
+                        return;
+                    }
 
-                    case STUDY1_START -> setAnimState(ChibishiroAnimState.STUDY1_LOOP);
-                    case STUDY2_START -> setAnimState(ChibishiroAnimState.STUDY2_LOOP);
-                    case STUDY3_START -> setAnimState(ChibishiroAnimState.STUDY3_LOOP);
+                    case STUDY1_START -> {
+                        setAnimState(ChibishiroAnimState.STUDY1_LOOP);
+                        return;
+                    }
+                    case STUDY2_START -> {
+                        setAnimState(ChibishiroAnimState.STUDY2_LOOP);
+                        return;
+                    }
+                    case STUDY3_START -> {
+                        setAnimState(ChibishiroAnimState.STUDY3_LOOP);
+                        return;
+                    }
 
-                    case MEAL_START -> setAnimState(ChibishiroAnimState.MEAL_LOOP);
-                    case SLEEP_START -> setAnimState(ChibishiroAnimState.SLEEP_LOOP);
+                    case MEAL_START -> {
+                        setAnimState(ChibishiroAnimState.MEAL_LOOP);
+                        return;
+                    }
+                    case SLEEP_START -> {
+                        setAnimState(ChibishiroAnimState.SLEEP_LOOP);
+                        return;
+                    }
 
-                    case GAME1_START -> setAnimState(ChibishiroAnimState.GAME1_LOOP);
-                    case GAME2_START -> setAnimState(ChibishiroAnimState.GAME2_LOOP);
-                    case GAME3_START -> setAnimState(ChibishiroAnimState.GAME3_LOOP);
+                    case GAME1_START -> {
+                        setAnimState(ChibishiroAnimState.GAME1_LOOP);
+                        return;
+                    }
+                    case GAME2_START -> {
+                        setAnimState(ChibishiroAnimState.GAME2_LOOP);
+                        return;
+                    }
+                    case GAME3_START -> {
+                        setAnimState(ChibishiroAnimState.GAME3_LOOP);
+                        return;
+                    }
 
-                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5, TREASURE_START -> setAnimState(ChibishiroAnimState.IDLE);
-                    default -> {}
+                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5, TREASURE_START -> {
+                        setAnimState(ChibishiroAnimState.IDLE);
+                        return;
+                    }
+                    default -> {
+                    }
                 }
             }
         }
 
-        if (getAnimTicks() <= 0) {
+        if (getAnimTicks() <= 0 && !isInAssignedTaskAnimation()) {
+
             boolean moving = this.getVelocity().horizontalLengthSquared() > 0.0025;
 
             if (moving) {
@@ -179,23 +227,23 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
                     switch (r) {
                         case 0 -> {
                             setAnimState(ChibishiroAnimState.PLAY1);
-                            setAnimTicks(60);
+                            setAnimTicks(120);
                         }
                         case 1 -> {
                             setAnimState(ChibishiroAnimState.PLAY2);
-                            setAnimTicks(60);
+                            setAnimTicks(120);
                         }
                         case 2 -> {
                             setAnimState(ChibishiroAnimState.PLAY3);
-                            setAnimTicks(60);
+                            setAnimTicks(120);
                         }
                         case 3 -> {
                             setAnimState(ChibishiroAnimState.PLAY4);
-                            setAnimTicks(60);
+                            setAnimTicks(120);
                         }
                         case 4 -> {
                             setAnimState(ChibishiroAnimState.PLAY5);
-                            setAnimTicks(60);
+                            setAnimTicks(120);
                         }
                         default -> setAnimState(ChibishiroAnimState.IDLE);
                     }
@@ -208,62 +256,120 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
     public void startTraining1() {
         setAnimState(ChibishiroAnimState.TRAINING1_START);
-        setAnimTicks(20);
+        setAnimTicks(24);
     }
 
     public void startTraining2() {
         setAnimState(ChibishiroAnimState.TRAINING2_START);
-        setAnimTicks(20);
+        setAnimTicks(72);
     }
 
     public void startTraining3() {
         setAnimState(ChibishiroAnimState.TRAINING3_START);
-        setAnimTicks(20);
+        setAnimTicks(42);
     }
 
     public void startStudy1() {
+
         setAnimState(ChibishiroAnimState.STUDY1_START);
-        setAnimTicks(20);
+        setAnimTicks(24);
     }
 
     public void startStudy2() {
         setAnimState(ChibishiroAnimState.STUDY2_START);
-        setAnimTicks(20);
+        setAnimTicks(30);
     }
 
     public void startStudy3() {
         setAnimState(ChibishiroAnimState.STUDY3_START);
-        setAnimTicks(20);
+        setAnimTicks(30);
     }
+
+
 
     public void startMeal() {
         setAnimState(ChibishiroAnimState.MEAL_START);
-        setAnimTicks(20);
+        setAnimTicks(12);
     }
 
     public void startSleep() {
         setAnimState(ChibishiroAnimState.SLEEP_START);
-        setAnimTicks(20);
+        setAnimTicks(42);
     }
 
     public void startGame1() {
         setAnimState(ChibishiroAnimState.GAME1_START);
-        setAnimTicks(20);
+        setAnimTicks(12);
     }
 
     public void startGame2() {
         setAnimState(ChibishiroAnimState.GAME2_START);
-        setAnimTicks(20);
+        setAnimTicks(18);
     }
 
     public void startGame3() {
         setAnimState(ChibishiroAnimState.GAME3_START);
-        setAnimTicks(20);
+        setAnimTicks(48);
     }
 
     public void startTreasure() {
         setAnimState(ChibishiroAnimState.TREASURE_START);
-        setAnimTicks(30);
+        setAnimTicks(58);
+    }
+
+    public void startMealTask() {
+        setAnimState(ChibishiroAnimState.MEAL_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startStudy1Task() {
+        setAnimState(ChibishiroAnimState.STUDY1_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startStudy2Task() {
+        setAnimState(ChibishiroAnimState.STUDY2_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startStudy3Task() {
+        setAnimState(ChibishiroAnimState.STUDY3_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startTraining1Task() {
+        setAnimState(ChibishiroAnimState.TRAINING1_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startTraining2Task() {
+        setAnimState(ChibishiroAnimState.TRAINING2_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startTraining3Task() {
+        setAnimState(ChibishiroAnimState.TRAINING3_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startGame1Task() {
+        setAnimState(ChibishiroAnimState.GAME1_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startGame2Task() {
+        setAnimState(ChibishiroAnimState.GAME2_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startGame3Task() {
+        setAnimState(ChibishiroAnimState.GAME3_TASK);
+        setAnimTicks(0);
+    }
+
+    public void startSleepTask() {
+        setAnimState(ChibishiroAnimState.SLEEP_TASK);
+        setAnimTicks(0);
     }
 
     @Override
@@ -271,6 +377,19 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
         nbt.putInt("Color", this.dataTracker.get(COLOR));
         nbt.putInt("AnimState", this.dataTracker.get(ANIM_STATE));
         nbt.putInt("AnimTicks", this.dataTracker.get(ANIM_TICKS));
+
+        if (homeTreePos != null) {
+            nbt.putInt("HomeTreeX", homeTreePos.getX());
+            nbt.putInt("HomeTreeY", homeTreePos.getY());
+            nbt.putInt("HomeTreeZ", homeTreePos.getZ());
+        }
+        if (homeTreeUuid != null) {
+            nbt.putUuid("HomeTreeUuid", homeTreeUuid);
+        }
+        if (!getDisplayFoodStack().isEmpty()) {
+            nbt.put("DisplayFood", getDisplayFoodStack().writeNbt(new NbtCompound()));
+        }
+
     }
 
     @Override
@@ -278,6 +397,22 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
         this.dataTracker.set(COLOR, nbt.getInt("Color"));
         this.dataTracker.set(ANIM_STATE, nbt.getInt("AnimState"));
         this.dataTracker.set(ANIM_TICKS, nbt.getInt("AnimTicks"));
+
+        if (nbt.contains("HomeTreeX") && nbt.contains("HomeTreeY") && nbt.contains("HomeTreeZ")) {
+            this.homeTreePos = new BlockPos(
+                    nbt.getInt("HomeTreeX"),
+                    nbt.getInt("HomeTreeY"),
+                    nbt.getInt("HomeTreeZ")
+            );
+        }
+        if (nbt.containsUuid("HomeTreeUuid")) {
+            this.homeTreeUuid = nbt.getUuid("HomeTreeUuid");
+        }
+        if (nbt.contains("DisplayFood")) {
+            setDisplayFoodStack(ItemStack.fromNbt(nbt.getCompound("DisplayFood")));
+        } else {
+            setDisplayFoodStack(ItemStack.EMPTY);
+        }
     }
 
     @Override
@@ -324,6 +459,44 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
             case TREASURE_START -> RawAnimation.begin().thenPlay(ANIM_TREASURE_START);
 
+            // TASK系: start → loop を1本で渡す
+            case MEAL_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_MEAL_START)
+                    .thenLoop(ANIM_MEALING);
+
+            case STUDY1_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_STUDY1START)
+                    .thenLoop(ANIM_STUDY1);
+            case STUDY2_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_STUDY2START)
+                    .thenLoop(ANIM_STUDY2);
+            case STUDY3_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_STUDY3START)
+                    .thenLoop(ANIM_STUDY3);
+
+            case TRAINING1_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_TRAINING1START)
+                    .thenLoop(ANIM_TRAINING1);
+            case TRAINING2_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_TRAINING2START)
+                    .thenLoop(ANIM_TRAINING2);
+            case TRAINING3_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_TRAINING3START)
+                    .thenLoop(ANIM_TRAINING3);
+
+            case GAME1_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_GAME1START)
+                    .thenLoop(ANIM_GAME1);
+            case GAME2_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_GAME2START)
+                    .thenLoop(ANIM_GAME2);
+            case GAME3_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_GAME3START)
+                    .thenLoop(ANIM_GAME3);
+            case SLEEP_TASK -> RawAnimation.begin()
+                    .thenPlay(ANIM_SLEEP_START)
+                    .thenLoop(ANIM_SLEEP);
+
             default -> RawAnimation.begin().thenLoop(ANIM_IDLE);
         };
     }
@@ -360,7 +533,43 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
     public boolean cannotDespawn() {
         return true;
     }
+    public boolean isInAssignedTaskAnimation() {
+        ChibishiroAnimState state = getAnimState();
+
+        return switch (state) {
+            case MEAL_START, MEAL_LOOP, MEAL_TASK,
+
+                 STUDY1_START, STUDY1_LOOP, STUDY1_TASK,
+                 STUDY2_START, STUDY2_LOOP, STUDY2_TASK,
+                 STUDY3_START, STUDY3_LOOP, STUDY3_TASK,
+
+                 TRAINING1_START, TRAINING1_LOOP, TRAINING1_TASK,
+                 TRAINING2_START, TRAINING2_LOOP, TRAINING2_TASK,
+                 TRAINING3_START, TRAINING3_LOOP, TRAINING3_TASK,
+
+                 GAME1_START, GAME1_LOOP, GAME1_TASK,
+                 GAME2_START, GAME2_LOOP, GAME2_TASK,
+                 GAME3_START, GAME3_LOOP, GAME3_TASK,
+                 SLEEP_TASK-> true;
+
+            default -> false;
+        };
+    }
+    //食事アイテム描画
 
 
+    public ItemStack getDisplayFoodStack() {
+        return this.dataTracker.get(DISPLAY_FOOD);
+    }
+
+    public void setDisplayFoodStack(ItemStack stack) {
+        ItemStack copy = stack == null ? ItemStack.EMPTY : stack.copy();
+        if (!copy.isEmpty()) {
+            copy.setCount(1);
+        }
+        this.dataTracker.set(DISPLAY_FOOD, copy);
+    }
+    private static final TrackedData<ItemStack> DISPLAY_FOOD =
+            DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
 
 }

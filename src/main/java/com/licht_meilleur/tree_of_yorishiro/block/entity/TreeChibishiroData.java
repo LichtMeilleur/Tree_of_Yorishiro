@@ -2,6 +2,7 @@ package com.licht_meilleur.tree_of_yorishiro.block.entity;
 
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroAnimState;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroColor;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 
 public class TreeChibishiroData {
@@ -16,6 +17,15 @@ public class TreeChibishiroData {
     private ChibishiroAnimState animState;
     private java.util.UUID entityUuid;
 
+    // 追加
+    private String trainingType;
+    private int trainingLevel;
+    private long trainingEndTick;
+    private boolean trainingCompleted;
+
+    private ItemStack displayItem = ItemStack.EMPTY;
+
+
     public TreeChibishiroData(ChibishiroColor color) {
         this.color = color;
         this.genki = 100;
@@ -25,6 +35,12 @@ public class TreeChibishiroData {
         this.training = false;
         this.adventuring = false;
         this.animState = ChibishiroAnimState.IDLE;
+
+        // 追加
+        this.trainingType = "";
+        this.trainingLevel = 0;
+        this.trainingEndTick = 0L;
+        this.trainingCompleted = false;
     }
 
     public ChibishiroColor getColor() {
@@ -47,7 +63,6 @@ public class TreeChibishiroData {
         return stress;
     }
 
-
     public boolean isTraining() {
         return training;
     }
@@ -58,6 +73,26 @@ public class TreeChibishiroData {
 
     public ChibishiroAnimState getAnimState() {
         return animState;
+    }
+
+    public java.util.UUID getEntityUuid() {
+        return entityUuid;
+    }
+
+    public String getTrainingType() {
+        return trainingType;
+    }
+
+    public int getTrainingLevel() {
+        return trainingLevel;
+    }
+
+    public long getTrainingEndTick() {
+        return trainingEndTick;
+    }
+
+    public boolean isTrainingCompleted() {
+        return trainingCompleted;
     }
 
     public void setGenki(int genki) {
@@ -87,12 +122,25 @@ public class TreeChibishiroData {
     public void setAnimState(ChibishiroAnimState animState) {
         this.animState = animState;
     }
-    public java.util.UUID getEntityUuid() {
-        return entityUuid;
-    }
 
     public void setEntityUuid(java.util.UUID entityUuid) {
         this.entityUuid = entityUuid;
+    }
+
+    public void setTrainingType(String trainingType) {
+        this.trainingType = trainingType;
+    }
+
+    public void setTrainingLevel(int trainingLevel) {
+        this.trainingLevel = trainingLevel;
+    }
+
+    public void setTrainingEndTick(long trainingEndTick) {
+        this.trainingEndTick = trainingEndTick;
+    }
+
+    public void setTrainingCompleted(boolean trainingCompleted) {
+        this.trainingCompleted = trainingCompleted;
     }
 
     public void writeNbt(NbtCompound nbt) {
@@ -104,9 +152,16 @@ public class TreeChibishiroData {
         nbt.putBoolean("Training", training);
         nbt.putBoolean("Adventuring", adventuring);
         nbt.putString("AnimState", animState.name());
+
         if (entityUuid != null) {
             nbt.putUuid("EntityUuid", entityUuid);
         }
+
+        // 追加
+        nbt.putString("TrainingType", trainingType);
+        nbt.putInt("TrainingLevel", trainingLevel);
+        nbt.putLong("TrainingEndTick", trainingEndTick);
+        nbt.putBoolean("TrainingCompleted", trainingCompleted);
     }
 
     public static TreeChibishiroData fromNbt(NbtCompound nbt) {
@@ -128,7 +183,9 @@ public class TreeChibishiroData {
 
         String animName = nbt.getString("AnimState");
         try {
-            data.animState = animName.isEmpty() ? ChibishiroAnimState.IDLE : ChibishiroAnimState.valueOf(animName);
+            data.animState = animName.isEmpty()
+                    ? ChibishiroAnimState.IDLE
+                    : ChibishiroAnimState.valueOf(animName);
         } catch (IllegalArgumentException ignored) {
             data.animState = ChibishiroAnimState.IDLE;
         }
@@ -136,6 +193,12 @@ public class TreeChibishiroData {
         if (nbt.containsUuid("EntityUuid")) {
             data.entityUuid = nbt.getUuid("EntityUuid");
         }
+
+        // 追加
+        data.trainingType = nbt.getString("TrainingType");
+        data.trainingLevel = nbt.getInt("TrainingLevel");
+        data.trainingEndTick = nbt.getLong("TrainingEndTick");
+        data.trainingCompleted = nbt.getBoolean("TrainingCompleted");
 
         return data;
     }

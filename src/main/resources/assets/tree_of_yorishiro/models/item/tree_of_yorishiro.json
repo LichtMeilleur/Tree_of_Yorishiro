@@ -1,3 +1,6 @@
 {
-  "parent": "tree_of_yorishiro:block/tree_of_yorishiro"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "tree_of_yorishiro:item/tree_of_yorishiro_item"
+  }
 }

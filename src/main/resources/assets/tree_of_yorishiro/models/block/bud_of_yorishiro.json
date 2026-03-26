@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [128, 128],
 	"textures": {
-		"0": "bud_of_yorishiro",
-		"particle": "bud_of_yorishiro"
+		"0": "tree_of_yorishiro:block/bud_of_yorishiro",
+		"particle": "tree_of_yorishiro:block/bud_of_yorishiro"
 	},
 	"elements": [
 		{

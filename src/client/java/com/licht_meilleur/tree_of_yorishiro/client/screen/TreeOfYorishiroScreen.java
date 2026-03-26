@@ -1,6 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.client.screen;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
+import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity;
 import com.licht_meilleur.tree_of_yorishiro.screen.TreeOfYorishiroScreenHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.DrawContext;
@@ -11,6 +12,7 @@ import net.minecraft.util.Identifier;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeChibishiroData;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroColor;
+import org.jetbrains.annotations.Nullable;
 
 public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHandler> {
 
@@ -60,7 +62,12 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         super.init();
 
         this.titleX = this.backgroundWidth - this.textRenderer.getWidth(this.title) - 10;
-        this.titleY = this.backgroundHeight - 96;
+        this.titleY = this.backgroundHeight - 230;
+
+        // UIのデフォルト表示と実際の選択色を一致させる
+        this.selectedTab = 0;
+        setDetailPage(DetailPage.MAIN);
+        sendSelectedTabColorToServer(this.selectedTab);
     }
 
     private Identifier getCurrentBackground() {
@@ -73,6 +80,7 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
             default -> WHITE_UI;
         };
     }
+
 
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
@@ -99,6 +107,12 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         // 選択中タブのハイライト
         drawSelectedTabHighlight(context, x, y);
 
+
+        if (selectedTab != 5 && isTrainingDetailPage()) {
+            drawTrainingSlots(context, x, y);
+            drawPlayerInventorySlots(context, x, y);
+        }
+
         if (selectedTab != 5) {
             if (detailPage == DetailPage.MAIN) {
                 drawSingleChibi3D(context, x, y);
@@ -109,6 +123,16 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
             }
         } else {
             drawAdventureArea(context, x, y);
+        }
+        if (isTrainingDetailPage()) {
+            boolean canStart = this.handler.canStartTraining();
+
+            int fillColor = canStart ? 0xFF6FA8DC : 0xFF888888;
+            int borderColor = canStart ? 0xFF2E5D87 : 0xFF555555;
+
+            context.fill(x + 150, y + 145, x + 210, y + 165, fillColor);
+            context.drawBorder(x + 150, y + 145, 60, 20, borderColor);
+            context.drawText(this.textRenderer, "start", x + 168, y + 151, 0xFFFFFFFF, false);
         }
     }
 
@@ -141,38 +165,49 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         // 白
         if (isInside(mouseX, mouseY, x + 0, y + 8, 24, 16)) {
             selectedTab = 0;
+            setDetailPage(DetailPage.MAIN);
+            sendSelectedTabColorToServer(selectedTab);
             return true;
         }
         // 赤
         if (isInside(mouseX, mouseY, x + 24, y + 8, 24, 16)) {
             selectedTab = 1;
+            setDetailPage(DetailPage.MAIN);
+            sendSelectedTabColorToServer(selectedTab);
             return true;
         }
         // 青
         if (isInside(mouseX, mouseY, x + 48, y + 8, 24, 16)) {
             selectedTab = 2;
+            setDetailPage(DetailPage.MAIN);
+            sendSelectedTabColorToServer(selectedTab);
             return true;
         }
         // 黄
         if (isInside(mouseX, mouseY, x + 72, y + 8, 24, 16)) {
             selectedTab = 3;
+            setDetailPage(DetailPage.MAIN);
+            sendSelectedTabColorToServer(selectedTab);
             return true;
         }
         // 紫
         if (isInside(mouseX, mouseY, x + 96, y + 8, 24, 16)) {
             selectedTab = 4;
+            setDetailPage(DetailPage.MAIN);
+            sendSelectedTabColorToServer(selectedTab);
             return true;
         }
         // 冒険
         if (isInside(mouseX, mouseY, x + 120, y + 8, 68, 16)) {
             selectedTab = 5;
+            setDetailPage(DetailPage.ADVENTURE);
             return true;
         }
 
         int bx = x + 180;
         int by = y + 60;
 
-// 通常画面のときだけ
+        // 通常画面のときだけ
         if (detailPage == DetailPage.MAIN && selectedTab != 5) {
             if (isInside(mouseX, mouseY, bx, by, 64, 16)) {
                 setDetailPage(DetailPage.MEAL);
@@ -191,12 +226,23 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
                 return true;
             }
         }
-        if (selectedTab == 5) {
-            setDetailPage(DetailPage.ADVENTURE);
-        } else if (detailPage == DetailPage.ADVENTURE) {
-            setDetailPage(DetailPage.MAIN);
+
+        // startボタン（育成ページのときだけ）
+        if (isTrainingDetailPage()) {
+            if (isPointIn(mouseX, mouseY, x + 150, y + 145, 60, 20)) {
+                if (this.handler.canStartTraining()
+                        && this.client != null
+                        && this.client.interactionManager != null) {
+                    this.client.interactionManager.clickButton(
+                            this.handler.getSyncIdForClient(),
+                            TreeOfYorishiroScreenHandler.BUTTON_START_TRAINING
+                    );
+                }
+                return true;
+            }
         }
 
+        // もどる
         if (detailPage != DetailPage.MAIN && detailPage != DetailPage.ADVENTURE) {
             if (isInside(mouseX, mouseY, x + 18, y + 28, 40, 12)) {
                 setDetailPage(DetailPage.MAIN);
@@ -205,6 +251,11 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private boolean isPointIn(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX < x + width
+                && mouseY >= y && mouseY < y + height;
     }
 
     private boolean isInside(double mouseX, double mouseY, int x, int y, int w, int h) {
@@ -257,21 +308,6 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         return data;
     }
 
-    private void drawSingleChibiArea(DrawContext context, int x, int y) {
-        TreeChibishiroData data = getSelectedChibiData();
-        if (data == null) return;
-
-        Identifier tex = getTextureForColor(data.getColor());
-
-        int drawX = x + 18;
-        int drawY = y + 18;
-
-        // 背景プレート
-        context.fill(drawX - 4, drawY - 4, drawX + 84, drawY + 84, 0x66000000);
-
-        // 仮表示
-        context.drawTexture(tex, drawX, drawY, 0, 0, 80, 80, 64, 64);
-    }
 
     private void drawStatusTexts(DrawContext context, int x, int y) {
         TreeChibishiroData data = getSelectedChibiData();
@@ -331,19 +367,26 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         if (this.client == null || this.client.world == null) return;
         if (selectedTab < 0 || selectedTab > 4) return;
 
+        TreeOfYorishiroBlockEntity be = handler.getBlockEntity(this.client.world);
+        if (be == null) return;
+
         TreeChibishiroData data = getSelectedChibiData();
-        if (data == null) return;
+        if (data == null || data.getEntityUuid() == null) return;
 
-        int colorIndex = data.getColor().ordinal();
+        com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity found = null;
 
-        if (previewChibi == null || previewColorCache != colorIndex) {
-            previewChibi = new com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity(
-                    com.licht_meilleur.tree_of_yorishiro.registry.ModEntities.CHIBISHIRO,
-                    this.client.world
-            );
-            previewChibi.setColor(data.getColor());
-            previewColorCache = colorIndex;
+        for (com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity entity :
+                this.client.world.getEntitiesByClass(
+                        com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity.class,
+                        new net.minecraft.util.math.Box(be.getPos()).expand(32.0),
+                        e -> e.getUuid().equals(data.getEntityUuid())
+                )) {
+            found = entity;
+            break;
         }
+
+        previewChibi = found;
+        previewColorCache = data.getColor().ordinal();
     }
     private void drawSingleChibi3D(DrawContext context, int x, int y) {
         ensurePreviewChibi();
@@ -364,10 +407,10 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
         );
     }
     private void drawActionButtons(DrawContext context, int x, int y) {
-        context.drawTexture(BUTTON_UI, x + 180, y + 60,  0, 0, 64, 16, 64, 16);
-        context.drawTexture(BUTTON_UI, x + 180, y + 84,  0, 0, 64, 16, 64, 16);
-        context.drawTexture(BUTTON_UI, x + 180, y + 108, 0, 0, 64, 16, 64, 16);
-        context.drawTexture(BUTTON_UI, x + 180, y + 132, 0, 0, 64, 16, 64, 16);
+        context.drawTexture(BUTTON_UI, x + 180, y + 60,  0, 0, 64, 20, 64, 20);
+        context.drawTexture(BUTTON_UI, x + 180, y + 84,  0, 0, 64, 20, 64, 20);
+        context.drawTexture(BUTTON_UI, x + 180, y + 108, 0, 0, 64, 20, 64, 20);
+        context.drawTexture(BUTTON_UI, x + 180, y + 132, 0, 0, 64, 20, 64, 20);
 
         context.drawText(this.textRenderer, Text.translatable("screen.tree_of_yorishiro.meal"), x + 200, y + 64, 0x000000, true);
         context.drawText(this.textRenderer, Text.translatable("screen.tree_of_yorishiro.study"), x + 198, y + 88, 0x000000, true);
@@ -432,13 +475,103 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
     private void setDetailPage(DetailPage page) {
         this.detailPage = page;
 
-        switch (page) {
-            case MAIN -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.MAIN);
-            case MEAL -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.MEAL);
-            case STUDY -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.STUDY);
-            case EXERCISE -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.EXERCISE);
-            case PLAY -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.PLAY);
-            case ADVENTURE -> this.handler.setCurrentPage(TreeOfYorishiroScreenHandler.DetailPage.ADVENTURE);
+        // クライアント側 handler も即更新する
+        TreeOfYorishiroScreenHandler.DetailPage handlerPage = switch (page) {
+            case MAIN -> TreeOfYorishiroScreenHandler.DetailPage.MAIN;
+            case MEAL -> TreeOfYorishiroScreenHandler.DetailPage.MEAL;
+            case STUDY -> TreeOfYorishiroScreenHandler.DetailPage.STUDY;
+            case EXERCISE -> TreeOfYorishiroScreenHandler.DetailPage.EXERCISE;
+            case PLAY -> TreeOfYorishiroScreenHandler.DetailPage.PLAY;
+            case ADVENTURE -> TreeOfYorishiroScreenHandler.DetailPage.ADVENTURE;
+        };
+        this.handler.setCurrentPage(handlerPage);
+
+        int buttonId = switch (page) {
+            case MAIN -> TreeOfYorishiroScreenHandler.BUTTON_MAIN;
+            case MEAL -> TreeOfYorishiroScreenHandler.BUTTON_MEAL;
+            case STUDY -> TreeOfYorishiroScreenHandler.BUTTON_STUDY;
+            case EXERCISE -> TreeOfYorishiroScreenHandler.BUTTON_EXERCISE;
+            case PLAY -> TreeOfYorishiroScreenHandler.BUTTON_PLAY;
+            case ADVENTURE -> TreeOfYorishiroScreenHandler.BUTTON_ADVENTURE;
+        };
+
+        if (this.client != null && this.client.interactionManager != null) {
+            this.client.interactionManager.clickButton(this.handler.getSyncIdForClient(), buttonId);
         }
+    }
+    private void drawSlotBox(DrawContext context, int x, int y) {
+        context.fill(x, y, x + 18, y + 18, 0x80FFFFFF); // 薄い白
+        context.fill(x, y, x + 18, y + 1, 0xFFAAAAAA);  // 上
+        context.fill(x, y, x + 1, y + 18, 0xFFAAAAAA);  // 左
+        context.fill(x + 17, y, x + 18, y + 18, 0xFF555555); // 右
+        context.fill(x, y + 17, x + 18, y + 18, 0xFF555555); // 下
+    }
+    private boolean isTrainingDetailPage() {
+        return detailPage == DetailPage.MEAL
+                || detailPage == DetailPage.STUDY
+                || detailPage == DetailPage.EXERCISE
+                || detailPage == DetailPage.PLAY;
+    }
+
+    private void drawTrainingSlots(DrawContext context, int x, int y) {
+        switch (detailPage) {
+            case MEAL -> {
+                // しょくじは1スロットだけ
+                drawSlotBox(context, x + 110, y + 70);
+            }
+            case STUDY, EXERCISE, PLAY -> {
+                // そのほかは3スロット
+                drawSlotBox(context, x + 96, y + 66);   // Lv1
+                drawSlotBox(context, x + 96, y + 96);   // Lv2
+                drawSlotBox(context, x + 96, y + 126);  // Lv3
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void drawPlayerInventorySlots(DrawContext context, int x, int y) {
+        int startX = 48;
+        int startY = 190;
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                drawSlotBox(context, x + startX + col * 18, y + startY + row * 18);
+            }
+        }
+    }
+    private void sendSelectedTabColorToServer(int tab) {
+        if (this.client == null || this.client.interactionManager == null) return;
+
+        int buttonId = switch (tab) {
+            case 1 -> TreeOfYorishiroScreenHandler.BUTTON_SELECT_RED;
+            case 2 -> TreeOfYorishiroScreenHandler.BUTTON_SELECT_BLUE;
+            case 3 -> TreeOfYorishiroScreenHandler.BUTTON_SELECT_YELLOW;
+            case 4 -> TreeOfYorishiroScreenHandler.BUTTON_SELECT_PURPLE;
+            case 0 -> TreeOfYorishiroScreenHandler.BUTTON_SELECT_WHITE;
+            default -> -1;
+        };
+
+        if (buttonId >= 0) {
+            this.client.interactionManager.clickButton(this.handler.getSyncIdForClient(), buttonId);
+        }
+    }
+    private ChibishiroColor getSelectedColor() {
+        return switch (selectedTab) {
+            case 1 -> ChibishiroColor.RED;
+            case 2 -> ChibishiroColor.BLUE;
+            case 3 -> ChibishiroColor.YELLOW;
+            case 4 -> ChibishiroColor.PURPLE;
+            default -> ChibishiroColor.WHITE;
+        };
+    }
+    @Nullable
+    private ChibishiroEntity getPreviewEntity() {
+        TreeOfYorishiroBlockEntity be = handler.getBlockEntity(client.world);
+        if (be == null || client == null || client.world == null) {
+            return null;
+        }
+
+        return be.getChibiEntityByColor(client.world, getSelectedColor());
     }
 }

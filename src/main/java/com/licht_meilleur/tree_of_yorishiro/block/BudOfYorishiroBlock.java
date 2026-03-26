@@ -88,7 +88,7 @@ public class BudOfYorishiroBlock extends Block {
     public void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
         if (!state.get(WATERED)) return;
 
-        if (random.nextInt(8) == 0) {
+        if (random.nextInt(1) == 0) {
             growNow(world, pos);
         }
     }
