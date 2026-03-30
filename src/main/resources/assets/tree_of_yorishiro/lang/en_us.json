@@ -29,5 +29,14 @@
 
   "item.tree_of_yorishiro.ball": "ball",
   "item.tree_of_yorishiro.bubble_set": "bubble set",
-  "item.tree_of_yorishiro.game": "game"
+  "item.tree_of_yorishiro.game": "game",
+  "gui.tree_of_yorishiro.start_adventure": "Start Adventure",
+  "gui.tree_of_yorishiro.adventuring": "Adventuring",
+  "gui.tree_of_yorishiro.adventure_rewards": "Rewards",
+  "gui.tree_of_yorishiro.claim_rewards": "Claim",
+
+  "block.tree_of_yorishiro.debug_tree_of_yorishiro": "Tree of Yorishiro (Debug)",
+  "item.tree_of_yorishiro.debug_tree_of_yorishiro": "Tree of Yorishiro (Debug)",
+
+  "block.tree_of_yorishiro.yorishiro_stone": "Yorishiro Stone"
 }

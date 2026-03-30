@@ -133,4 +133,17 @@ public class BudOfYorishiroBlock extends Block {
             world.spawnEntity(entity);
         }
     }
+    @Override
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+
+        if (!world.isClient) {
+            dropStack(world, pos,
+                    new net.minecraft.item.ItemStack(
+                            com.licht_meilleur.tree_of_yorishiro.registry.ModItems.RAINBOW_SEED
+                    )
+            );
+        }
+
+        super.onBreak(world, pos, state, player);
+    }
 }

@@ -6,6 +6,9 @@ import com.licht_meilleur.tree_of_yorishiro.registry.ModEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModItemGroups;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
 import com.licht_meilleur.tree_of_yorishiro.screen.ModScreenHandlers;
+import com.licht_meilleur.tree_of_yorishiro.world.ModFeatures;
+import com.licht_meilleur.tree_of_yorishiro.world.ModPlacedFeatures;
+import com.licht_meilleur.tree_of_yorishiro.world.ModWorldGeneration;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -30,6 +33,10 @@ public class TreeofYorishiroMod implements ModInitializer {
         ModEntities.register();
         ModScreenHandlers.register();
         ModItemGroups.register();
+
+        ModFeatures.register();
+        ModWorldGeneration.generateWorldGen();
+
 
         LOGGER.info("[TreeOfYorishiro] onInitialize done");
     }

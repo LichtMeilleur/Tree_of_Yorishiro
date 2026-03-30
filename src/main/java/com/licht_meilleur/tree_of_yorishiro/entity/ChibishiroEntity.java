@@ -11,6 +11,8 @@ import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
@@ -203,11 +205,22 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
                         return;
                     }
 
-                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5, TREASURE_START -> {
+                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5 -> {
                         setAnimState(ChibishiroAnimState.IDLE);
                         return;
                     }
-                    default -> {
+
+                    case TREASURE_START -> {
+                        if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld sw) {
+                            sw.spawnParticles(
+                                    ParticleTypes.CLOUD,
+                                    this.getX(), this.getBodyY(0.5), this.getZ(),
+                                    12, 0.2, 0.2, 0.2, 0.02
+                            );
+                        }
+
+                        this.discard(); // ←ここで消える
+                        return;
                     }
                 }
             }
@@ -572,4 +585,9 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
     private static final TrackedData<ItemStack> DISPLAY_FOOD =
             DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
 
+
+    public void startTreasureAndVanish() {
+        setAnimState(ChibishiroAnimState.TREASURE_START);
+        setAnimTicks(58); // あとで調整
+    }
 }

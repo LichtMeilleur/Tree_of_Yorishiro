@@ -15,7 +15,8 @@ public class ModBlockEntities {
                     TreeofYorishiroMod.id("tree_of_yorishiro"),
                     FabricBlockEntityTypeBuilder.create(
                             TreeOfYorishiroBlockEntity::new,
-                            ModBlocks.TREE_OF_YORISHIRO
+                            ModBlocks.TREE_OF_YORISHIRO,
+                            ModBlocks.DEBUG_TREE_OF_YORISHIRO
                     ).build()
             );
 

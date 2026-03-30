@@ -1,0 +1,12 @@
+{
+  "feature": "tree_of_yorishiro:yorishiro_stone",
+  "placement": [
+    {
+      "type": "minecraft:count",
+      "count": 8
+    },
+    {
+      "type": "minecraft:in_square"
+    }
+  ]
+}

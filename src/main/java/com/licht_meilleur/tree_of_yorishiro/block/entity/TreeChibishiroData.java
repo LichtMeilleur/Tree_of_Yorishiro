@@ -25,6 +25,8 @@ public class TreeChibishiroData {
 
     private ItemStack displayItem = ItemStack.EMPTY;
 
+    private long adventureEndTick;
+
 
     public TreeChibishiroData(ChibishiroColor color) {
         this.color = color;
@@ -162,6 +164,8 @@ public class TreeChibishiroData {
         nbt.putInt("TrainingLevel", trainingLevel);
         nbt.putLong("TrainingEndTick", trainingEndTick);
         nbt.putBoolean("TrainingCompleted", trainingCompleted);
+
+        nbt.putLong("AdventureEndTick", adventureEndTick);
     }
 
     public static TreeChibishiroData fromNbt(NbtCompound nbt) {
@@ -200,6 +204,16 @@ public class TreeChibishiroData {
         data.trainingEndTick = nbt.getLong("TrainingEndTick");
         data.trainingCompleted = nbt.getBoolean("TrainingCompleted");
 
+        data.adventureEndTick = nbt.getLong("AdventureEndTick");
+
         return data;
+    }
+
+    public long getAdventureEndTick() {
+        return adventureEndTick;
+    }
+
+    public void setAdventureEndTick(long adventureEndTick) {
+        this.adventureEndTick = adventureEndTick;
     }
 }

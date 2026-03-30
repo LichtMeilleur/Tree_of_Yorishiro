@@ -16,6 +16,9 @@ public class ModItems {
     public static final Item TREE_OF_YORISHIRO_ITEM = register("tree_of_yorishiro",
             new BlockItem(ModBlocks.TREE_OF_YORISHIRO, new FabricItemSettings().maxCount(1)));
 
+    public static final Item YORISHIRO_STONE = register("yorishiro_stone",
+            new BlockItem(ModBlocks.YORISHIRO_STONE, new FabricItemSettings()));
+
     // べんきょう
     public static final Item STUDY_BOOK = register("study_book", new Item(new FabricItemSettings()));
     public static final Item STUDY_SET = register("study_set", new Item(new FabricItemSettings()));
@@ -36,6 +39,9 @@ public class ModItems {
     public static final Item PUNCHING_MACHINE = register("punching_machine", new Item(new FabricItemSettings()));
     public static final Item RUNNING_MACHINE = register("running_machine", new Item(new FabricItemSettings()));
     public static final Item STUDY_DESK = register("study_desk", new Item(new FabricItemSettings()));
+
+    public static final Item DEBUG_TREE_OF_YORISHIRO_ITEM = register("debug_tree_of_yorishiro",
+            new BlockItem(ModBlocks.DEBUG_TREE_OF_YORISHIRO, new FabricItemSettings().maxCount(1)));
 
     private static Item register(String name, Item item) {
         return Registry.register(Registries.ITEM, TreeofYorishiroMod.id(name), item);

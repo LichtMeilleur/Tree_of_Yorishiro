@@ -36,6 +36,8 @@ public class ModItemGroups {
                         entries.add(ModItems.PUNCHING_MACHINE);
                         entries.add(ModItems.RUNNING_MACHINE);
                         entries.add(ModItems.STUDY_DESK);
+
+                        entries.add(ModItems.DEBUG_TREE_OF_YORISHIRO_ITEM);
                     })
                     .build()
     );

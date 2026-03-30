@@ -249,6 +249,28 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
                 return true;
             }
         }
+        //冒険開始ボタン
+        if (detailPage == DetailPage.ADVENTURE) {
+            if (isPointIn(mouseX, mouseY, x + 150, y + 122, 70, 20)) {
+                if (this.client != null && this.client.interactionManager != null) {
+                    this.client.interactionManager.clickButton(
+                            this.handler.getSyncIdForClient(),
+                            TreeOfYorishiroScreenHandler.BUTTON_START_ADVENTURE
+                    );
+                }
+                return true;
+            }
+
+            if (isPointIn(mouseX, mouseY, x + 180, y + 164, 60, 20)) {
+                if (this.client != null && this.client.interactionManager != null) {
+                    this.client.interactionManager.clickButton(
+                            this.handler.getSyncIdForClient(),
+                            TreeOfYorishiroScreenHandler.BUTTON_CLAIM_ADVENTURE
+                    );
+                }
+                return true;
+            }
+        }
 
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -349,19 +371,106 @@ public class TreeOfYorishiroScreen extends HandledScreen<TreeOfYorishiroScreenHa
                 Text.translatable("screen.tree_of_yorishiro.send_adventure"),
                 x + 42, y + 46, 0xFFFFFF, true);
 
+        // 5人表示
         for (int i = 0; i < 5; i++) {
-            TreeChibishiroData data = be.getChibi(i);
-            if (data == null) continue;
+            int drawX = x + 28 + (i * 42);
+            int drawY = y + 108;
 
-            Identifier tex = getTextureForColor(data.getColor());
-            int drawX = x + 22 + (i * 42);
-            int drawY = y + 86;
+            context.fill(drawX - 18, drawY - 38, drawX + 18, drawY + 6, 0x22000000);
 
-            context.fill(drawX - 2, drawY - 2, drawX + 38, drawY + 38, 0x66000000);
-            context.drawTexture(tex, drawX, drawY, 0, 0, 36, 36, 64, 64);
+            ChibishiroEntity entity = getAdventurePreviewEntity(i);
+            if (entity != null) {
+                net.minecraft.client.gui.screen.ingame.InventoryScreen.drawEntity(
+                        context,
+                        drawX,
+                        drawY,
+                        20,
+                        0,
+                        0,
+                        entity
+                );
+            }
         }
 
+        // 5人全員が冒険中なら中央に1つだけ表示
+        boolean allAdventuring = true;
+        for (int i = 0; i < 5; i++) {
+            TreeChibishiroData data = be.getChibi(i);
+            if (data == null || !data.isAdventuring()) {
+                allAdventuring = false;
+                break;
+            }
+        }
 
+        if (allAdventuring) {
+            Text text = Text.translatable("gui.tree_of_yorishiro.adventuring");
+            int centerX = x + this.backgroundWidth / 2;
+            int textWidth = this.textRenderer.getWidth(text);
+
+            context.fill(centerX - 45, y + 90, centerX + 45, y + 104, 0x88000000);
+            context.drawText(this.textRenderer, text, centerX - textWidth / 2, y + 94, 0xFFFFFF, false);
+        }
+
+        boolean canStart = be.canStartAdventure();
+
+        int startX = x + 150;
+        int startY = y + 122;
+        int startW = 70;
+        int startH = 20;
+
+        int fillColor = canStart ? 0xFF6FA8DC : 0xFF888888;
+        int borderColor = canStart ? 0xFF2E5D87 : 0xFF555555;
+
+        context.fill(startX, startY, startX + startW, startY + startH, fillColor);
+        context.drawBorder(startX, startY, startW, startH, borderColor);
+
+        Text startText = Text.translatable("gui.tree_of_yorishiro.start_adventure");
+        int startTextX = startX + (startW - this.textRenderer.getWidth(startText)) / 2;
+        context.drawText(this.textRenderer, startText, startTextX, startY + 6, 0xFFFFFFFF, false);
+
+        // 成果物ラベル
+        context.drawText(this.textRenderer,
+                Text.translatable("gui.tree_of_yorishiro.adventure_rewards"),
+                x + 26, y + 152, 0xFFFFFF, false);
+
+        // 受け取りボタン
+        boolean hasRewards = be.hasAdventureRewards();
+
+        int claimX = x + 180;
+        int claimY = y + 164;
+        int claimW = 60;
+        int claimH = 20;
+
+        int claimFill = hasRewards ? 0xFF6FA8DC : 0xFF888888;
+        int claimBorder = hasRewards ? 0xFF2E5D87 : 0xFF555555;
+
+        context.fill(claimX, claimY, claimX + claimW, claimY + claimH, claimFill);
+        context.drawBorder(claimX, claimY, claimW, claimH, claimBorder);
+
+        Text claimText = Text.translatable("gui.tree_of_yorishiro.claim_rewards");
+        int claimTextX = claimX + (claimW - this.textRenderer.getWidth(claimText)) / 2;
+        context.drawText(this.textRenderer, claimText, claimTextX, claimY + 6, 0xFFFFFFFF, false);
+    }
+
+    @Nullable
+    private ChibishiroEntity getAdventurePreviewEntity(int index) {
+        if (this.client == null || this.client.world == null) return null;
+
+        TreeOfYorishiroBlockEntity be = getTreeBlockEntity();
+        if (be == null) return null;
+
+        TreeChibishiroData data = be.getChibi(index);
+        if (data == null || data.getEntityUuid() == null) return null;
+
+        for (ChibishiroEntity entity : this.client.world.getEntitiesByClass(
+                ChibishiroEntity.class,
+                new net.minecraft.util.math.Box(be.getPos()).expand(32.0),
+                e -> e.getUuid().equals(data.getEntityUuid())
+        )) {
+            return entity;
+        }
+
+        return null;
     }
     private void ensurePreviewChibi() {
         if (this.client == null || this.client.world == null) return;

@@ -34,6 +34,16 @@ public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
     // 木本体ブロック自身の当たり判定
     private static final VoxelShape BASE_SHAPE = Block.createCuboidShape(0, 0, 0, 16, 16, 16);
 
+
+    private BlockPos rotateOffset(BlockPos origin, int offX, int offY, int offZ, Direction facing) {
+        return switch (facing) {
+            case SOUTH -> origin.add(offX, offY, offZ);
+            case WEST  -> origin.add(-offZ, offY, offX);
+            case NORTH -> origin.add(-offX, offY, -offZ);
+            case EAST  -> origin.add(offZ, offY, -offX);
+            default    -> origin.add(offX, offY, offZ);
+        };
+    }
     /**
      * 相対座標:
      * 本体ブロックを (0,0,0) としたときに、
@@ -99,7 +109,9 @@ public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
         be.initDefaultChibisIfNeeded();
         be.startGrowAnimation();
         be.markDirty();
-        
+
+        clearNearbyCollisionBlocks(world, pos);
+        placeCollisionBlocks(world, pos, state);
     }
 
     @Override
@@ -142,6 +154,7 @@ public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
                 be.discardAllChildren();
             }
 
+            clearNearbyCollisionBlocks(world, pos);
         }
 
         super.onStateReplaced(state, world, pos, newState, moved);
@@ -156,5 +169,55 @@ public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         return BASE_SHAPE;
     }
+    @Override
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+
+        if (!world.isClient) {
+            dropStack(world, pos,
+                    new net.minecraft.item.ItemStack(
+                            com.licht_meilleur.tree_of_yorishiro.registry.ModItems.TREE_OF_YORISHIRO_ITEM
+                    )
+            );
+        }
+
+        super.onBreak(world, pos, state, player);
+    }
+    private void placeCollisionBlocks(World world, BlockPos pos, BlockState state) {
+        Direction facing = state.get(FACING);
+
+        for (int[] offset : COLLISION_OFFSETS) {
+            BlockPos target = rotateOffset(pos, offset[0], offset[1], offset[2], facing);
+
+            if (world.getBlockState(target).isAir()) {
+                world.setBlockState(target, ModBlocks.YORISHIRO_TRUNK_COLLISION.getDefaultState());
+            }
+        }
+    }
+
+    private void removeCollisionBlocks(World world, BlockPos pos, BlockState state) {
+        Direction facing = state.get(FACING);
+
+        for (int[] offset : COLLISION_OFFSETS) {
+            BlockPos target = rotateOffset(pos, offset[0], offset[1], offset[2], facing);
+
+            if (world.getBlockState(target).isOf(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
+                world.setBlockState(target, net.minecraft.block.Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+            }
+        }
+    }
+
+    private void clearNearbyCollisionBlocks(World world, BlockPos pos) {
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dy = 0; dy <= 8; dy++) {
+                for (int dz = -4; dz <= 4; dz++) {
+                    BlockPos target = pos.add(dx, dy, dz);
+                    if (world.getBlockState(target).isOf(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
+                        world.setBlockState(target, net.minecraft.block.Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                    }
+                }
+            }
+        }
+    }
+
 
 }

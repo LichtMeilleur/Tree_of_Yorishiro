@@ -5,6 +5,7 @@ import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroColor;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModEntities;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
@@ -31,7 +32,20 @@ import net.minecraft.text.Text;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-
+import net.minecraft.inventory.Inventories;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.util.Identifier;
 
 
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -60,6 +74,22 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
     private boolean growing = false;
     private int growTicks = 0;
     private static final int GROW_ANIM_TICKS = 30;
+    private final SimpleInventory adventureInventory = new SimpleInventory(9);
+
+    private static final TagKey<Item> ADVENTURE_COMMON = TagKey.of(
+            Registries.ITEM.getKey(),
+            new Identifier("tree_of_yorishiro", "adventure_common")
+    );
+
+    private static final TagKey<Item> ADVENTURE_UNCOMMON = TagKey.of(
+            Registries.ITEM.getKey(),
+            new Identifier("tree_of_yorishiro", "adventure_uncommon")
+    );
+
+    private static final TagKey<Item> ADVENTURE_RARE = TagKey.of(
+            Registries.ITEM.getKey(),
+            new Identifier("tree_of_yorishiro", "adventure_rare")
+    );
 
 
     public java.util.UUID getTreeId() {
@@ -111,6 +141,7 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         be.initDefaultChibisIfNeeded();
         tickGrowAnimation(be);
         tickTraining(be);
+        tickAdventure(be);
 
         if (be.summonCheckCooldown > 0) {
             be.summonCheckCooldown--;
@@ -160,6 +191,19 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
             }
         }
 
+        for (int i = 0; i < adventureInventory.size(); i++) {
+            adventureInventory.setStack(i, ItemStack.EMPTY);
+        }
+
+        NbtList adventureInvList = nbt.getList("AdventureInventory", 10);
+        for (int i = 0; i < adventureInvList.size(); i++) {
+            NbtCompound stackNbt = adventureInvList.getCompound(i);
+            int slot = stackNbt.getByte("Slot") & 255;
+            if (slot >= 0 && slot < adventureInventory.size()) {
+                adventureInventory.setStack(slot, ItemStack.fromNbt(stackNbt));
+            }
+        }
+
         String selectedColorId = nbt.getString("SelectedColor");
         this.selectedColor = switch (selectedColorId) {
             case "blue" -> ChibishiroColor.BLUE;
@@ -198,6 +242,18 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         nbt.putInt("GrowTicks", this.growTicks);
 
         nbt.putString("SelectedColor", this.selectedColor.getId());
+
+        NbtList adventureInvList = new NbtList();
+        for (int i = 0; i < adventureInventory.size(); i++) {
+            ItemStack stack = adventureInventory.getStack(i);
+            if (!stack.isEmpty()) {
+                NbtCompound stackNbt = new NbtCompound();
+                stackNbt.putByte("Slot", (byte) i);
+                stack.writeNbt(stackNbt);
+                adventureInvList.add(stackNbt);
+            }
+        }
+        nbt.put("AdventureInventory", adventureInvList);
     }
 
     @Override
@@ -217,11 +273,18 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
     }
 
 
-    private void ensureChibishiros() {
+    public void ensureChibishiros() {
         if (!(this.world instanceof net.minecraft.server.world.ServerWorld sw)) return;
 
         for (TreeChibishiroData data : this.chibis) {
             com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity found = null;
+
+
+                if (data.isAdventuring()) {
+                    continue;
+                }
+
+
 
             if (data.getEntityUuid() != null) {
                 net.minecraft.entity.Entity e = sw.getEntity(data.getEntityUuid());
@@ -272,6 +335,10 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
     }
     public void startTrainingFromScreen(String pageName, int slotIndex, ItemStack consumedStack) {
         if (this.world == null || this.world.isClient()) {
+            return;
+        }
+
+        if (isAnyChibiAdventuring()) {
             return;
         }
 
@@ -334,17 +401,37 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         }
 
 
-        if (data.getEntityUuid() != null && this.world instanceof net.minecraft.server.world.ServerWorld sw) {
-            net.minecraft.entity.Entity e = sw.getEntity(data.getEntityUuid());
+            if (data.getEntityUuid() != null && this.world instanceof ServerWorld sw) {
+                Entity e = sw.getEntity(data.getEntityUuid());
 
+                if (e instanceof ChibishiroEntity chibi) {
+                    chibi.getNavigation().stop();
+                    chibi.setAnimTicks(0);
 
-            if (e instanceof com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity chibi) {
+                    if ("MEAL".equals(pageName)) {
+                        chibi.setDisplayFoodStack(consumedStack);
+                        chibi.startMealTask();
+                    }
 
-                if ("MEAL".equals(pageName)) {
-                    chibi.setDisplayFoodStack(consumedStack);
+                    if ("STUDY".equals(pageName)) {
+                        if (level == 1) chibi.startStudy1Task();
+                        else if (level == 2) chibi.startStudy2Task();
+                        else if (level == 3) chibi.startStudy3Task();
+                    }
+
+                    if ("EXERCISE".equals(pageName)) {
+                        if (level == 1) chibi.startTraining1Task();
+                        else if (level == 2) chibi.startTraining2Task();
+                        else if (level == 3) chibi.startTraining3Task();
+                    }
+
+                    if ("PLAY".equals(pageName)) {
+                        if (level == 1) chibi.startGame1Task();
+                        else if (level == 2) chibi.startGame2Task();
+                        else if (level == 3) chibi.startGame3Task();
+                    }
                 }
 
-            }
         }
 
 
@@ -509,4 +596,282 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
 
         return null;
     }
+
+    public boolean canStartAdventure() {
+        if (hasAdventureRewards()) return false;
+
+        for (TreeChibishiroData data : this.chibis) {
+            if (data.isTraining()) return false;
+            if (data.isAdventuring()) return false;
+            if (data.getEntityUuid() == null) return false;
+        }
+        return true;
+    }
+
+    public void startAdventureFromScreen() {
+        if (this.world == null || this.world.isClient()) return;
+        if (!canStartAdventure()) return;
+
+        long now = this.world.getTime();
+        long duration = 20L * 30L;
+
+        for (TreeChibishiroData data : this.chibis) {
+            data.setAdventuring(true);
+            data.setAdventureEndTick(now + duration);
+            data.setAnimState(ChibishiroAnimState.TREASURE_START);
+
+            if (data.getEntityUuid() != null && this.world instanceof ServerWorld sw) {
+                net.minecraft.entity.Entity e = sw.getEntity(data.getEntityUuid());
+                if (e instanceof ChibishiroEntity chibi) {
+                    chibi.startTreasureAndVanish();
+                }
+            }
+        }
+
+        markDirty();
+        this.world.updateListeners(this.pos, this.getCachedState(), this.getCachedState(), 3);
+    }
+    private static void tickAdventure(TreeOfYorishiroBlockEntity be) {
+        if (be.world == null || be.world.isClient()) return;
+
+        long now = be.world.getTime();
+        boolean changed = false;
+
+        for (TreeChibishiroData data : be.chibis) {
+            if (!data.isAdventuring()) continue;
+
+            // 消えた実体のUUIDを掃除
+            if (data.getEntityUuid() != null && be.world instanceof ServerWorld sw) {
+                Entity existing = sw.getEntity(data.getEntityUuid());
+                if (!(existing instanceof ChibishiroEntity) || !existing.isAlive()) {
+                    data.setEntityUuid(null);
+                    changed = true;
+                }
+            }
+
+            if (now >= data.getAdventureEndTick()) {
+                data.setAdventuring(false);
+                data.setAdventureEndTick(0L);
+                data.setAnimState(ChibishiroAnimState.IDLE);
+
+                Random random = be.world.getRandom();
+
+                // ★ 個体ごとの能力で抽選回数を決める
+                int rewardCount = be.getAdventureRollCount(random, data);
+
+                for (int i = 0; i < rewardCount; i++) {
+                    be.addAdventureReward(be.rollAdventureReward(random, data));
+                }
+
+                // 実体がいなければ帰還再召喚
+                if (data.getEntityUuid() == null && be.world instanceof ServerWorld sw) {
+                    ChibishiroEntity chibi = ModEntities.CHIBISHIRO.create(sw);
+                    if (chibi != null) {
+                        chibi.setColor(data.getColor());
+                        chibi.setHomeTreePos(be.pos);
+                        chibi.setHomeTreeUuid(be.getTreeId());
+
+                        double spawnX = be.pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 2.0;
+                        double spawnY = be.pos.getY() + 1.0;
+                        double spawnZ = be.pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 2.0;
+
+                        chibi.refreshPositionAndAngles(spawnX, spawnY, spawnZ, 0.0F, 0.0F);
+                        sw.spawnEntity(chibi);
+
+                        data.setEntityUuid(chibi.getUuid());
+                    }
+                }
+
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            be.markDirty();
+            be.world.updateListeners(be.pos, be.getCachedState(), be.getCachedState(), 3);
+        }
+    }
+    public SimpleInventory getAdventureInventory() {
+        return adventureInventory;
+    }
+    public boolean hasAdventureRewards() {
+        for (int i = 0; i < adventureInventory.size(); i++) {
+            if (!adventureInventory.getStack(i).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private void addAdventureReward(ItemStack stack) {
+        for (int i = 0; i < adventureInventory.size(); i++) {
+            ItemStack existing = adventureInventory.getStack(i);
+
+            if (existing.isEmpty()) {
+                adventureInventory.setStack(i, stack.copy());
+                return;
+            }
+
+            if (ItemStack.canCombine(existing, stack) && existing.getCount() < existing.getMaxCount()) {
+                int movable = Math.min(stack.getCount(), existing.getMaxCount() - existing.getCount());
+                existing.increment(movable);
+                stack.decrement(movable);
+                if (stack.isEmpty()) return;
+            }
+        }
+
+        // 入り切らなかったら木の場所にドロップ
+        if (this.world instanceof ServerWorld sw) {
+            Block.dropStack(sw, this.pos.up(), stack);
+        }
+    }
+    private ItemStack rollAdventureReward(Random random, TreeChibishiroData data) {
+        int genki = data.getGenki();
+        int kashikosa = data.getKashikosa();
+        int chikara = data.getChikara();
+
+        // ★ レア率補正
+        int bonus = 0;
+        bonus += kashikosa / 10;   // 賢さでレア率アップ
+        bonus += genki / 25;       // 元気も少し影響
+
+        int roll = random.nextInt(100) + bonus;
+
+        Item item;
+        int count;
+
+        if (roll < 65) {
+            // common
+            item = getRandomItemFromTag(random, ADVENTURE_COMMON, Items.STICK);
+
+            // 力で個数増加
+            count = 1 + (chikara / 25) + random.nextInt(2);
+
+        } else if (roll < 92) {
+            // uncommon
+            item = getRandomItemFromTag(random, ADVENTURE_UNCOMMON, Items.IRON_NUGGET);
+
+            count = 1 + (chikara / 40);
+            if (random.nextInt(100) < 30) {
+                count += 1;
+            }
+
+        } else {
+            // rare
+            item = getRandomItemFromTag(random, ADVENTURE_RARE, Items.GOLD_NUGGET);
+
+            count = 1;
+            if (kashikosa >= 80 && random.nextInt(100) < 20) {
+                count += 1;
+            }
+        }
+
+        count = Math.max(1, Math.min(count, item.getMaxCount()));
+        return new ItemStack(item, count);
+    }
+
+    public void claimAdventureRewards(ServerPlayerEntity player) {
+        if (this.world == null || this.world.isClient()) return;
+
+        for (int i = 0; i < adventureInventory.size(); i++) {
+            ItemStack stack = adventureInventory.getStack(i);
+            if (stack.isEmpty()) continue;
+
+            ItemStack toGive = stack.copy();
+            boolean inserted = player.getInventory().insertStack(toGive);
+
+            if (!inserted || !toGive.isEmpty()) {
+                Block.dropStack(this.world, player.getBlockPos(), toGive);
+            }
+
+            adventureInventory.setStack(i, ItemStack.EMPTY);
+        }
+
+        markDirty();
+        this.world.updateListeners(this.pos, this.getCachedState(), this.getCachedState(), 3);
+    }
+    public boolean isAnyChibiAdventuring() {
+        for (TreeChibishiroData data : this.chibis) {
+            if (data.isAdventuring()) return true;
+        }
+        return false;
+    }
+    public void debugSetAllChibisHighStats() {
+        initDefaultChibisIfNeeded();
+
+        for (TreeChibishiroData data : this.chibis) {
+            data.setGenki(100);
+            data.setKashikosa(80);
+            data.setChikara(80);
+            data.setStress(0);
+
+            data.setTraining(false);
+            data.setAdventuring(false);
+            data.setTrainingCompleted(false);
+            data.setTrainingType("");
+            data.setTrainingLevel(0);
+            data.setTrainingEndTick(0L);
+            data.setAdventureEndTick(0L);
+            data.setAnimState(ChibishiroAnimState.IDLE);
+            data.setEntityUuid(null);
+        }
+
+        if (this.world instanceof ServerWorld) {
+            ensureChibishiros();
+        }
+
+        markDirty();
+
+        if (this.world != null) {
+            this.world.updateListeners(this.pos, this.getCachedState(), this.getCachedState(), 3);
+        }
+    }
+
+    private boolean debugTree = false;
+
+    public boolean isDebugTree() {
+        return debugTree;
+    }
+
+    public void setDebugTree(boolean debugTree) {
+        this.debugTree = debugTree;
+    }
+    public void debugForceSpawnChibisNow() {
+        if (!(this.world instanceof ServerWorld sw)) return;
+
+        initDefaultChibisIfNeeded();
+        ensureChibishiros();
+        markDirty();
+        this.world.updateListeners(this.pos, this.getCachedState(), this.getCachedState(), 3);
+    }
+    private Item getRandomItemFromTag(Random random, TagKey<Item> tag, Item fallback) {
+        java.util.List<Item> pool = new java.util.ArrayList<>();
+
+        for (RegistryEntry<Item> entry : Registries.ITEM.iterateEntries(tag)) {
+            pool.add(entry.value());
+        }
+
+        if (pool.isEmpty()) {
+            return fallback;
+        }
+
+        return pool.get(random.nextInt(pool.size()));
+    }
+    private int getAdventureRollCount(Random random, TreeChibishiroData data) {
+        int genki = data.getGenki();
+        int kashikosa = data.getKashikosa();
+
+        int count = 1 + random.nextInt(2); // 基本 1～2回
+
+        // 元気が高いと追加抽選
+        if (genki >= 40) count += 1;
+        if (genki >= 80) count += 1;
+
+        // かしこさが高いとまれにさらに追加
+        if (kashikosa >= 60 && random.nextInt(100) < 35) {
+            count += 1;
+        }
+
+        return count;
+    }
+
 }

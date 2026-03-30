@@ -16,6 +16,7 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -45,22 +46,35 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
     public static final int BUTTON_SELECT_YELLOW = 13;
     public static final int BUTTON_SELECT_PURPLE = 14;
 
+    public static final int BUTTON_START_ADVENTURE = 30;
+    public static final int BUTTON_CLAIM_ADVENTURE = 31;
+
     private final BlockPos blockPos;
     private final ScreenHandlerContext context;
     private DetailPage currentPage = DetailPage.MAIN;
+    private final World playerWorld;
+
+
 
     public TreeOfYorishiroScreenHandler(int syncId, PlayerInventory inventory, BlockPos blockPos) {
         super(ModScreenHandlers.TREE_OF_YORISHIRO, syncId);
         this.blockPos = blockPos;
         this.context = ScreenHandlerContext.create(inventory.player.getWorld(), blockPos);
+        this.playerWorld = inventory.player.getWorld();
 
         TreeOfYorishiroBlockEntity be = getBlockEntity(inventory.player.getWorld());
         Inventory inv = be != null ? be.getTrainingInventory() : new SimpleInventory(4);
+
+        Inventory adventureInv = be != null ? be.getAdventureInventory() : new SimpleInventory(9);
 
         // slot0 = 食事
         this.addSlot(new Slot(inv, 0, 110, 70) {
             @Override
             public boolean canInsert(ItemStack stack) {
+                if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
+                    return false;
+                }
+
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.MEAL
                         && stack.isFood();
             }
@@ -75,6 +89,10 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         this.addSlot(new Slot(inv, 1, 96, 66) {
             @Override
             public boolean canInsert(ItemStack stack) {
+                if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
+                    return false;
+                }
+
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
                     case STUDY -> stack.isOf(ModItems.STUDY_BOOK);
                     case EXERCISE -> stack.isOf(ModItems.HEADBAND);
@@ -95,6 +113,10 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         this.addSlot(new Slot(inv, 2, 96, 96) {
             @Override
             public boolean canInsert(ItemStack stack) {
+                if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
+                    return false;
+                }
+
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
                     case STUDY -> stack.isOf(ModItems.STUDY_SET);
                     case EXERCISE -> stack.isOf(ModItems.PUNCHING_SET);
@@ -115,6 +137,10 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         this.addSlot(new Slot(inv, 3, 96, 126) {
             @Override
             public boolean canInsert(ItemStack stack) {
+                if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
+                    return false;
+                }
+
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
                     case STUDY -> stack.isOf(ModItems.HARD_STUDY_SET);
                     case EXERCISE -> stack.isOf(ModItems.RUNNING_SET);
@@ -131,17 +157,42 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
             }
         });
 
+        // 冒険成果物スロット 9個
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(adventureInv, i, 26 + i * 18, 168) {
+                @Override
+                public boolean canInsert(ItemStack stack) {
+                    return false;
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.ADVENTURE;
+                }
+            });
+        }
+
         int startX = 48;
         int startY = 190;
 
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, startX + col * 18, startY + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, startX + col * 18, startY + row * 18) {
+                    @Override
+                    public boolean isEnabled() {
+                        return isTrainingPage(TreeOfYorishiroScreenHandler.this.currentPage);
+                    }
+                });
             }
         }
 
         for (int col = 0; col < 9; ++col) {
-            this.addSlot(new Slot(inventory, col, startX + col * 18, startY + 58));
+            this.addSlot(new Slot(inventory, col, startX + col * 18, startY + 58) {
+                @Override
+                public boolean isEnabled() {
+                    return isTrainingPage(TreeOfYorishiroScreenHandler.this.currentPage);
+                }
+            });
         }
     }
 
@@ -207,10 +258,32 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
 
             TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
             if (be != null) {
+                if (be.isAnyChibiAdventuring()) {
+                    return false;
+                }
+
                 be.startTrainingFromScreen(this.currentPage.name(), selectedSlot, consumed);
                 be.markDirty();
+
             }
 
+            return true;
+        }
+        if (id == BUTTON_START_ADVENTURE) {
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
+            if (be != null) {
+
+                be.startAdventureFromScreen();
+                be.markDirty();
+            }
+            return true;
+        }
+        if (id == BUTTON_CLAIM_ADVENTURE) {
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
+            if (be != null && player instanceof ServerPlayerEntity serverPlayer) {
+                be.claimAdventureRewards(serverPlayer);
+                be.markDirty();
+            }
             return true;
         }
 
@@ -238,7 +311,14 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
 
     @Override
     public boolean canUse(PlayerEntity player) {
-        return canUse(this.context, player, ModBlocks.TREE_OF_YORISHIRO);
+        if (player.getWorld().getBlockEntity(this.blockPos) instanceof TreeOfYorishiroBlockEntity) {
+            return player.squaredDistanceTo(
+                    this.blockPos.getX() + 0.5,
+                    this.blockPos.getY() + 0.5,
+                    this.blockPos.getZ() + 0.5
+            ) <= 64.0;
+        }
+        return false;
     }
 
     @Override
@@ -379,5 +459,11 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
 
         return consumed;
     }
+
+    private boolean isAdventureLocked() {
+        TreeOfYorishiroBlockEntity be = getBlockEntity(playerWorld);
+        return be != null && be.isAnyChibiAdventuring();
+    }
+
 
 }

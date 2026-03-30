@@ -29,5 +29,15 @@
 
   "item.tree_of_yorishiro.ball": "ボール",
   "item.tree_of_yorishiro.bubble_set": "しゃぼんセット",
-  "item.tree_of_yorishiro.game": "ゲーム"
+  "item.tree_of_yorishiro.game": "ゲーム",
+
+  "gui.tree_of_yorishiro.start_adventure": "ぼうけんかいし",
+  "gui.tree_of_yorishiro.adventuring": "ぼうけんちゅう",
+  "gui.tree_of_yorishiro.adventure_rewards": "せいかぶつ",
+  "gui.tree_of_yorishiro.claim_rewards": "うけとる",
+
+  "block.tree_of_yorishiro.debug_tree_of_yorishiro": "よりしろの樹（テスト用）",
+  "item.tree_of_yorishiro.debug_tree_of_yorishiro": "よりしろの樹（テスト用）",
+
+  "block.tree_of_yorishiro.yorishiro_stone": "よりしろの石"
 }

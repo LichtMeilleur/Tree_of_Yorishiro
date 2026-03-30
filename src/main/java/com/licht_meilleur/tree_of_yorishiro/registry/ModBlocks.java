@@ -1,8 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.registry;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
-import com.licht_meilleur.tree_of_yorishiro.block.BudOfYorishiroBlock;
-import com.licht_meilleur.tree_of_yorishiro.block.TreeOfYorishiroBlock;
+import com.licht_meilleur.tree_of_yorishiro.block.*;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
@@ -25,6 +24,18 @@ public class ModBlocks {
                     .sounds(BlockSoundGroup.WOOD)
                     .nonOpaque()));
 
+    public static final Block DEBUG_TREE_OF_YORISHIRO = register("debug_tree_of_yorishiro",
+            new DebugTreeOfYorishiroBlock(AbstractBlock.Settings.create()
+                    .strength(2.0f)
+                    .sounds(BlockSoundGroup.WOOD)
+                    .nonOpaque()));
+
+    public static final Block YORISHIRO_STONE = register("yorishiro_stone",
+            new Block(AbstractBlock.Settings.create()
+                    .strength(1.5f)
+                    .sounds(BlockSoundGroup.STONE)
+                    .requiresTool()));
+
     private static Block register(String name, Block block) {
         return Registry.register(Registries.BLOCK, TreeofYorishiroMod.id(name), block);
     }
@@ -32,6 +43,15 @@ public class ModBlocks {
     public static void register() {
         TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering blocks");
     }
-
+    public static final Block YORISHIRO_TRUNK_COLLISION = registerBlockWithoutItem(
+            "yorishiro_trunk_collision",
+            new YorishiroTrunkCollisionBlock(FabricBlockSettings.create()
+                    .strength(-1.0F, 3600000.0F)
+                    .dropsNothing()
+            )
+    );
+    private static Block registerBlockWithoutItem(String name, Block block) {
+        return Registry.register(Registries.BLOCK, TreeofYorishiroMod.id(name), block);
+    }
 
 }
