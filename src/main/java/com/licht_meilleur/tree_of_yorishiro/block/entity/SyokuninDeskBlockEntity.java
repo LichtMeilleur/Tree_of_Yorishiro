@@ -2,6 +2,7 @@ package com.licht_meilleur.tree_of_yorishiro.block.entity;
 
 import com.licht_meilleur.tree_of_yorishiro.block.SyokuninDeskBlock;
 import com.licht_meilleur.tree_of_yorishiro.entity.YorisyokuninEntity;
+import com.licht_meilleur.tree_of_yorishiro.recipe.YorisyokuninRecipeDef;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModEntities;
 import com.licht_meilleur.tree_of_yorishiro.screen.YorisyokuninTradeScreenHandler;
@@ -24,6 +25,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -33,6 +35,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.List;
 import java.util.UUID;
 
 public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEntity, ExtendedScreenHandlerFactory {
@@ -121,19 +124,18 @@ public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEnti
         if (world.isClient) return;
 
         if (be.working) {
-            be.workTicks++;
-
             YorisyokuninEntity syokunin = be.getSyokunin();
-            if (syokunin != null) {
-                syokunin.startWork();
+
+            // 向き完了 → workアニメ開始後にだけ進捗を進める
+            if (syokunin == null || !syokunin.isWorkAnimationActive()) {
+                return;
             }
+
+            be.workTicks++;
 
             if (be.workTicks >= 100 && !be.showHeldOutput && !be.pendingOutput.isEmpty()) {
                 be.showHeldOutput = true;
-
-                if (syokunin != null) {
-                    syokunin.setHeldWorkItem(be.pendingOutput.copy());
-                }
+                syokunin.setHeldWorkItem(be.pendingOutput.copy());
 
                 be.markDirty();
                 world.updateListeners(pos, state, state, Block.NOTIFY_ALL);
@@ -157,11 +159,18 @@ public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEnti
         return workTicks;
     }
 
-    public void tryStartWork(ItemStack result) {
+    public void tryStartWork(com.licht_meilleur.tree_of_yorishiro.recipe.YorisyokuninRecipeDef recipe) {
         if (world == null || world.isClient) return;
-        if (working || result.isEmpty()) return;
+        if (working || recipe == null) return;
 
-        // 入っているスロットだけ1個ずつ消費
+        java.util.List<ItemStack> inputs = java.util.List.of(
+                inventory.getStack(0),
+                inventory.getStack(1),
+                inventory.getStack(2)
+        );
+
+        if (!recipe.matches(inputs)) return;
+
         for (int i = 0; i < 3; i++) {
             ItemStack stack = inventory.getStack(i);
             if (!stack.isEmpty()) {
@@ -172,14 +181,14 @@ public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEnti
             }
         }
 
-        this.pendingOutput = result.copy();
+        this.pendingOutput = recipe.getOutput();
         this.working = true;
         this.workTicks = 0;
         this.showHeldOutput = false;
 
         YorisyokuninEntity syokunin = getSyokunin();
         if (syokunin != null) {
-            syokunin.startWork();
+            syokunin.beginDeskWork(getWorkLookTarget());
             syokunin.setHeldWorkItem(ItemStack.EMPTY);
         }
 
@@ -192,7 +201,7 @@ public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEnti
 
         YorisyokuninEntity syokunin = getSyokunin();
         if (syokunin != null) {
-            syokunin.setIdle();
+            syokunin.stopDeskWork();
             syokunin.setHeldWorkItem(ItemStack.EMPTY);
         }
 
@@ -331,5 +340,29 @@ public class SyokuninDeskBlockEntity extends BlockEntity implements GeoBlockEnti
         if (nbt.containsUuid("SyokuninUuid")) {
             syokuninUuid = nbt.getUuid("SyokuninUuid");
         }
+    }
+
+    private static BlockPos rotateNorthOffset(BlockPos offset, Direction facing) {
+        return switch (facing) {
+            case NORTH -> offset;
+            case EAST  -> new BlockPos(-offset.getZ(), offset.getY(), offset.getX());
+            case SOUTH -> new BlockPos(-offset.getX(), offset.getY(), -offset.getZ());
+            case WEST  -> new BlockPos(offset.getZ(), offset.getY(), -offset.getX());
+            default    -> offset;
+        };
+    }
+
+    public Vec3d getWorkLookTarget() {
+        Direction facing = this.getCachedState().get(SyokuninDeskBlock.FACING);
+
+        BlockPos frontOffset = new BlockPos(0, 0, -1);
+        BlockPos rotated = rotateNorthOffset(frontOffset, facing);
+        BlockPos targetPos = this.pos.add(rotated);
+
+        return new Vec3d(
+                targetPos.getX() + 0.5,
+                targetPos.getY() + 1.0,
+                targetPos.getZ() + 0.5
+        );
     }
 }

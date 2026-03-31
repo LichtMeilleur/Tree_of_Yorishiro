@@ -30,6 +30,12 @@
   "item.tree_of_yorishiro.ball": "ball",
   "item.tree_of_yorishiro.bubble_set": "bubble set",
   "item.tree_of_yorishiro.game": "game",
+
+  "item.tree_of_yorishiro.glasses_and_pen": "glasses and pen",
+  "item.tree_of_yorishiro.punching_machine": "Punching Machine",
+  "item.tree_of_yorishiro.running_machine": "Running Machine",
+  "item.tree_of_yorishiro.study_desk": "Study Desk",
+
   "gui.tree_of_yorishiro.start_adventure": "Start Adventure",
   "gui.tree_of_yorishiro.adventuring": "Adventuring",
   "gui.tree_of_yorishiro.adventure_rewards": "Rewards",

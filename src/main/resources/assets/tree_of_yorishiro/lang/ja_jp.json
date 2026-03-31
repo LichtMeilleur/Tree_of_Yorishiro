@@ -31,6 +31,11 @@
   "item.tree_of_yorishiro.bubble_set": "しゃぼんセット",
   "item.tree_of_yorishiro.game": "ゲーム",
 
+  "item.tree_of_yorishiro.glasses_and_pen": "めがねとペン",
+  "item.tree_of_yorishiro.punching_machine": "パンチングマシン",
+  "item.tree_of_yorishiro.running_machine": "ランニングマシン",
+  "item.tree_of_yorishiro.study_desk": "べんきょうづくえ",
+
   "gui.tree_of_yorishiro.start_adventure": "ぼうけんかいし",
   "gui.tree_of_yorishiro.adventuring": "ぼうけんちゅう",
   "gui.tree_of_yorishiro.adventure_rewards": "せいかぶつ",

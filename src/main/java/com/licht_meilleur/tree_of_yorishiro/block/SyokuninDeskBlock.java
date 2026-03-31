@@ -1,6 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.block;
 
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
 import net.minecraft.block.Block;
@@ -9,6 +10,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
@@ -93,7 +96,7 @@ public class SyokuninDeskBlock extends BlockWithEntity {
      * 南東3段: (1,0,1), (1,1,1), (1,2,1)
      */
     private static final BlockPos[] NORTH_COLLISIONS = new BlockPos[] {
-            new BlockPos( 0, 0, -1),
+            new BlockPos( 0, 0, -1),// 北
             new BlockPos(-1, 0, -1),
 
             new BlockPos(-1, 1, -1),
@@ -177,5 +180,17 @@ public class SyokuninDeskBlock extends BlockWithEntity {
         }
 
         super.onBreak(world, pos, state, player);
+    }
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            World world,
+            BlockState state,
+            BlockEntityType<T> type
+    ) {
+        return world.isClient ? null : checkType(
+                type,
+                ModBlockEntities.SYOKUNIN_DESK,
+                SyokuninDeskBlockEntity::tick
+        );
     }
 }

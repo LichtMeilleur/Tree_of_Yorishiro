@@ -8,6 +8,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.screen.ArrayPropertyDelegate;
+import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 
@@ -15,15 +17,20 @@ import java.util.List;
 
 public class YorisyokuninTradeScreenHandler extends ScreenHandler {
 
+    private static final int BUTTON_CRAFT = 0;
+    private static final int BUTTON_RECIPE_BASE = 1000;
+
     private final SyokuninDeskBlockEntity be;
     private final Inventory inventory;
-    private int selectedRecipe = 0;
-
+    private final PropertyDelegate properties;
 
     public YorisyokuninTradeScreenHandler(int syncId, PlayerInventory playerInventory, SyokuninDeskBlockEntity be) {
         super(ModScreenHandlers.YORISYOKUNIN_TRADE, syncId);
         this.be = be;
         this.inventory = be.getInventory();
+        this.properties = new ArrayPropertyDelegate(1); // 0 = selectedRecipe
+
+        this.addProperties(this.properties);
         addSlots(playerInventory);
     }
 
@@ -33,26 +40,54 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     private void addSlots(PlayerInventory playerInventory) {
-        this.addSlot(new Slot(inventory, 0, 44, 35));
-        this.addSlot(new Slot(inventory, 1, 62, 35));
-        this.addSlot(new Slot(inventory, 2, 80, 35));
+        // 右上3入力
+        this.addSlot(new Slot(inventory, 0, 132, 34));
+        this.addSlot(new Slot(inventory, 1, 152, 34));
+        this.addSlot(new Slot(inventory, 2, 172, 34));
 
-        for (int m = 0; m < 3; ++m) {
-            for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + m * 9 + 9, 8 + l * 18, 84 + m * 18));
+        // プレイヤーインベントリ
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 9; ++col) {
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 47 + col * 18, 172 + row * 18));
             }
         }
 
-        for (int m = 0; m < 9; ++m) {
-            this.addSlot(new Slot(playerInventory, m, 8 + m * 18, 142));
+        // ホットバー
+        for (int col = 0; col < 9; ++col) {
+            this.addSlot(new Slot(playerInventory, col, 47 + col * 18, 230));
         }
     }
 
-    public boolean startWork() {
-        var recipes = YorisyokuninRecipeRegistry.getRecipes();
-        if (recipes.isEmpty()) return false;
+    public List<YorisyokuninRecipeDef> getRecipes() {
+        return YorisyokuninRecipeRegistry.getRecipes();
+    }
 
-        YorisyokuninRecipeDef recipe = recipes.get(selectedRecipe);
+    public int getRecipeCount() {
+        return getRecipes().size();
+    }
+
+    public int getSelectedRecipe() {
+        return properties.get(0);
+    }
+
+    public void setSelectedRecipe(int selectedRecipe) {
+        int max = Math.max(0, getRecipeCount() - 1);
+        properties.set(0, Math.max(0, Math.min(selectedRecipe, max)));
+    }
+
+    public YorisyokuninRecipeDef getSelectedRecipeDef() {
+        List<YorisyokuninRecipeDef> recipes = getRecipes();
+        if (recipes.isEmpty()) return null;
+
+        int index = getSelectedRecipe();
+        if (index < 0 || index >= recipes.size()) return null;
+
+        return recipes.get(index);
+    }
+
+    public boolean canCraftSelectedRecipe() {
+        YorisyokuninRecipeDef recipe = getSelectedRecipeDef();
+        if (recipe == null) return false;
 
         List<ItemStack> inputs = List.of(
                 be.getInventory().getStack(0),
@@ -60,11 +95,15 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
                 be.getInventory().getStack(2)
         );
 
-        if (!recipe.matches(inputs.stream().filter(stack -> !stack.isEmpty()).toList())) {
-            return false;
-        }
+        return recipe.matches(inputs);
+    }
 
-        be.tryStartWork(recipe.getOutput());
+    public boolean startWork() {
+        YorisyokuninRecipeDef recipe = getSelectedRecipeDef();
+        if (recipe == null) return false;
+        if (!canCraftSelectedRecipe()) return false;
+
+        be.tryStartWork(recipe);
         return true;
     }
 
@@ -81,6 +120,21 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     @Override
+    public boolean onButtonClick(PlayerEntity player, int id) {
+        if (id == BUTTON_CRAFT) {
+            return startWork();
+        }
+
+        if (id >= BUTTON_RECIPE_BASE) {
+            int recipeIndex = id - BUTTON_RECIPE_BASE;
+            setSelectedRecipe(recipeIndex);
+            return true;
+        }
+
+        return super.onButtonClick(player, id);
+    }
+
+    @Override
     public boolean canUse(PlayerEntity player) {
         return be != null && player.squaredDistanceTo(
                 be.getPos().getX() + 0.5,
@@ -93,12 +147,12 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     public ItemStack quickMove(PlayerEntity player, int slot) {
         return ItemStack.EMPTY;
     }
-    public int getSelectedRecipe() {
-        return selectedRecipe;
+
+    public static int getCraftButtonId() {
+        return BUTTON_CRAFT;
     }
 
-    public void setSelectedRecipe(int selectedRecipe) {
-        int max = Math.max(0, com.licht_meilleur.tree_of_yorishiro.recipe.YorisyokuninRecipeRegistry.getRecipes().size() - 1);
-        this.selectedRecipe = Math.max(0, Math.min(selectedRecipe, max));
+    public static int getRecipeButtonId(int recipeIndex) {
+        return BUTTON_RECIPE_BASE + recipeIndex;
     }
 }

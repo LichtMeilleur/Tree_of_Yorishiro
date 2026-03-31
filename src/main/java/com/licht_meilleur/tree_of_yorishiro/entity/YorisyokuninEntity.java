@@ -1,6 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.entity;
 
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
+import com.licht_meilleur.tree_of_yorishiro.entity.ai.YorisyokuninWorkGoal;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -15,7 +16,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -37,8 +40,14 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
     private static final TrackedData<ItemStack> HELD_WORK_ITEM =
             DataTracker.registerData(YorisyokuninEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
 
+    private static final TrackedData<Boolean> WORKING =
+            DataTracker.registerData(YorisyokuninEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+
     private BlockPos deskPos;
+    @Nullable
+    private Vec3d workLookTarget;
 
     public YorisyokuninEntity(EntityType<? extends PathAwareEntity> type, World world) {
         super(type, world);
@@ -54,11 +63,63 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
         super.initDataTracker();
         this.dataTracker.startTracking(ANIM_STATE, AnimState.IDLE.ordinal());
         this.dataTracker.startTracking(HELD_WORK_ITEM, ItemStack.EMPTY);
+        this.dataTracker.startTracking(WORKING, false);
     }
 
     @Override
     protected void initGoals() {
-        this.goalSelector.add(1, new LookAroundGoal(this));
+        this.goalSelector.add(0, new YorisyokuninWorkGoal(this));
+
+        this.goalSelector.add(1, new LookAroundGoal(this) {
+            @Override
+            public boolean canStart() {
+                return !isWorking() && super.canStart();
+            }
+
+            @Override
+            public boolean shouldContinue() {
+                return !isWorking() && super.shouldContinue();
+            }
+        });
+    }
+
+    public boolean isWorking() {
+        return this.dataTracker.get(WORKING);
+    }
+
+    public boolean isWorkAnimationActive() {
+        return this.dataTracker.get(ANIM_STATE) == AnimState.WORK.ordinal();
+    }
+
+    public void beginDeskWork(Vec3d lookTarget) {
+        this.dataTracker.set(WORKING, true);
+        this.dataTracker.set(ANIM_STATE, AnimState.IDLE.ordinal());
+        this.workLookTarget = lookTarget;
+        this.getNavigation().stop();
+    }
+
+    public void playWorkAnimation() {
+        this.dataTracker.set(ANIM_STATE, AnimState.WORK.ordinal());
+    }
+
+    public void stopDeskWork() {
+        this.dataTracker.set(ANIM_STATE, AnimState.IDLE.ordinal());
+        this.dataTracker.set(WORKING, false);
+        this.workLookTarget = null;
+        this.getNavigation().stop();
+    }
+
+    public boolean hasWorkLookTarget() {
+        return this.workLookTarget != null;
+    }
+
+    @Nullable
+    public Vec3d getWorkLookTarget() {
+        return this.workLookTarget;
+    }
+
+    public void clearWorkLookTarget() {
+        this.workLookTarget = null;
     }
 
     public static DefaultAttributeContainer.Builder createAttributes() {
@@ -73,14 +134,6 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
 
     public BlockPos getDeskPosValue() {
         return deskPos;
-    }
-
-    public void startWork() {
-        this.dataTracker.set(ANIM_STATE, AnimState.WORK.ordinal());
-    }
-
-    public void setIdle() {
-        this.dataTracker.set(ANIM_STATE, AnimState.IDLE.ordinal());
     }
 
     public void setHeldWorkItem(ItemStack stack) {
@@ -111,6 +164,7 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
     @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         nbt.putInt("AnimState", this.dataTracker.get(ANIM_STATE));
+        nbt.putBoolean("Working", this.dataTracker.get(WORKING));
 
         if (deskPos != null) {
             nbt.putInt("DeskX", deskPos.getX());
@@ -121,11 +175,18 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
         if (!getHeldWorkItem().isEmpty()) {
             nbt.put("HeldWorkItem", getHeldWorkItem().writeNbt(new NbtCompound()));
         }
+
+        if (workLookTarget != null) {
+            nbt.putDouble("WorkLookX", workLookTarget.x);
+            nbt.putDouble("WorkLookY", workLookTarget.y);
+            nbt.putDouble("WorkLookZ", workLookTarget.z);
+        }
     }
 
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         this.dataTracker.set(ANIM_STATE, nbt.getInt("AnimState"));
+        this.dataTracker.set(WORKING, nbt.getBoolean("Working"));
 
         if (nbt.contains("DeskX")) {
             deskPos = new BlockPos(nbt.getInt("DeskX"), nbt.getInt("DeskY"), nbt.getInt("DeskZ"));
@@ -133,6 +194,16 @@ public class YorisyokuninEntity extends PathAwareEntity implements GeoEntity {
 
         if (nbt.contains("HeldWorkItem")) {
             setHeldWorkItem(ItemStack.fromNbt(nbt.getCompound("HeldWorkItem")));
+        }
+
+        if (nbt.contains("WorkLookX")) {
+            workLookTarget = new Vec3d(
+                    nbt.getDouble("WorkLookX"),
+                    nbt.getDouble("WorkLookY"),
+                    nbt.getDouble("WorkLookZ")
+            );
+        } else {
+            workLookTarget = null;
         }
     }
 

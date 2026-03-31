@@ -1,5 +1,6 @@
 package com.licht_meilleur.tree_of_yorishiro.client.entity;
 
+import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity;
 import com.licht_meilleur.tree_of_yorishiro.entity.YorisyokuninEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;

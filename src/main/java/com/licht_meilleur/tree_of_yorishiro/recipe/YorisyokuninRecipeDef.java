@@ -23,20 +23,33 @@ public class YorisyokuninRecipeDef {
     }
 
     public boolean matches(List<ItemStack> stacks) {
-        if (stacks.size() != inputs.size()) return false;
+        int nonEmptyCount = 0;
+        for (ItemStack stack : stacks) {
+            if (!stack.isEmpty()) {
+                nonEmptyCount++;
+            }
+        }
+
+        if (nonEmptyCount != inputs.size()) return false;
 
         boolean[] used = new boolean[stacks.size()];
 
         for (YorisyokuninRequirement requirement : inputs) {
             boolean matched = false;
+
             for (int i = 0; i < stacks.size(); i++) {
                 if (used[i]) continue;
-                if (requirement.matches(stacks.get(i))) {
+
+                ItemStack stack = stacks.get(i);
+                if (stack.isEmpty()) continue;
+
+                if (requirement.matches(stack)) {
                     used[i] = true;
                     matched = true;
                     break;
                 }
             }
+
             if (!matched) return false;
         }
 
