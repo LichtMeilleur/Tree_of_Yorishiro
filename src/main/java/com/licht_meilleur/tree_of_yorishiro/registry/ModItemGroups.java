@@ -15,10 +15,12 @@ public class ModItemGroups {
             TreeofYorishiroMod.id("tree_of_yorishiro_group"),
             FabricItemGroup.builder()
                     .displayName(Text.translatable("itemGroup.tree_of_yorishiro.group"))
-                    .icon(() -> new ItemStack(ModItems.RAINBOW_SEED))
+                    .icon(() -> new ItemStack(ModItems.YORISHIRO_STONE))
                     .entries((displayContext, entries) -> {
+                        entries.add(ModItems.YORISHIRO_STONE);
                         entries.add(ModItems.RAINBOW_SEED);
                         entries.add(ModItems.TREE_OF_YORISHIRO_ITEM);
+                        entries.add(ModItems.YORISYOKUNIN_SUMMON);
 
                         entries.add(ModItems.STUDY_BOOK);
                         entries.add(ModItems.STUDY_SET);

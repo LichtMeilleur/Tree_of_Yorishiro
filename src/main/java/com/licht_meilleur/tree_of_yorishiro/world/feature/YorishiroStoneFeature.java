@@ -2,6 +2,7 @@ package com.licht_meilleur.tree_of_yorishiro.world.feature;
 
 import com.mojang.serialization.Codec;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.tag.BlockTags;
@@ -33,12 +34,14 @@ public class YorishiroStoneFeature extends Feature<DefaultFeatureConfig> {
         BlockState below = world.getBlockState(belowPos);
         BlockState current = world.getBlockState(placePos);
 
-        // 空気の場所だけ
         if (!current.isAir()) {
             return false;
         }
 
-        // 地面の上だけ
+        if (!world.getFluidState(placePos).isEmpty()) {
+            return false;
+        }
+
         if (!(below.isOf(Blocks.GRASS_BLOCK)
                 || below.isOf(Blocks.DIRT)
                 || below.isOf(Blocks.COARSE_DIRT)
@@ -48,12 +51,7 @@ public class YorishiroStoneFeature extends Feature<DefaultFeatureConfig> {
             return false;
         }
 
-        // 水中や木の葉の上を避ける
-        if (world.getFluidState(placePos).isStill()) {
-            return false;
-        }
-
-        world.setBlockState(placePos, ModBlocks.YORISHIRO_STONE.getDefaultState(), 3);
+        world.setBlockState(placePos, ModBlocks.YORISHIRO_STONE.getDefaultState(), Block.NOTIFY_ALL);
         return true;
     }
 }

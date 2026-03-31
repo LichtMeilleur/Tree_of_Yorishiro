@@ -1,6 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.registry;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
+import com.licht_meilleur.tree_of_yorishiro.item.YorisyokuninSummonItem;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.item.AliasedBlockItem;
 import net.minecraft.item.BlockItem;
@@ -39,6 +40,9 @@ public class ModItems {
     public static final Item PUNCHING_MACHINE = register("punching_machine", new Item(new FabricItemSettings()));
     public static final Item RUNNING_MACHINE = register("running_machine", new Item(new FabricItemSettings()));
     public static final Item STUDY_DESK = register("study_desk", new Item(new FabricItemSettings()));
+
+    public static final Item YORISYOKUNIN_SUMMON = register("yorisyokunin_item",
+            new YorisyokuninSummonItem(new FabricItemSettings().maxCount(16)));
 
     public static final Item DEBUG_TREE_OF_YORISHIRO_ITEM = register("debug_tree_of_yorishiro",
             new BlockItem(ModBlocks.DEBUG_TREE_OF_YORISHIRO, new FabricItemSettings().maxCount(1)));

@@ -14,7 +14,7 @@ public class TreeOfYorishiroModel extends GeoModel<TreeOfYorishiroBlockEntity> {
 
     @Override
     public Identifier getTextureResource(TreeOfYorishiroBlockEntity animatable) {
-        return TreeofYorishiroMod.id("textures/entity/tree_of_yorishiro.png");
+        return TreeofYorishiroMod.id("textures/block/tree_of_yorishiro.png");
     }
 
     @Override

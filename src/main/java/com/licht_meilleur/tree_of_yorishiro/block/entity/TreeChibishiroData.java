@@ -27,6 +27,10 @@ public class TreeChibishiroData {
 
     private long adventureEndTick;
 
+    private long trainingLastRewardTick;
+    private boolean sleeping;
+    private long sleepingSinceTick;
+
 
     public TreeChibishiroData(ChibishiroColor color) {
         this.color = color;
@@ -144,6 +148,14 @@ public class TreeChibishiroData {
     public void setTrainingCompleted(boolean trainingCompleted) {
         this.trainingCompleted = trainingCompleted;
     }
+    public long getTrainingLastRewardTick() { return trainingLastRewardTick; }
+    public void setTrainingLastRewardTick(long tick) { this.trainingLastRewardTick = tick; }
+
+    public boolean isSleeping() { return sleeping; }
+    public void setSleeping(boolean sleeping) { this.sleeping = sleeping; }
+
+    public long getSleepingSinceTick() { return sleepingSinceTick; }
+    public void setSleepingSinceTick(long tick) { this.sleepingSinceTick = tick; }
 
     public void writeNbt(NbtCompound nbt) {
         nbt.putString("Color", color.getId());
@@ -166,6 +178,9 @@ public class TreeChibishiroData {
         nbt.putBoolean("TrainingCompleted", trainingCompleted);
 
         nbt.putLong("AdventureEndTick", adventureEndTick);
+        nbt.putLong("trainingLastRewardTick", trainingLastRewardTick);
+        nbt.putBoolean("Sleeping", sleeping);
+        nbt.putLong("SleepingSinceTick", sleepingSinceTick);
     }
 
     public static TreeChibishiroData fromNbt(NbtCompound nbt) {
@@ -205,6 +220,10 @@ public class TreeChibishiroData {
         data.trainingCompleted = nbt.getBoolean("TrainingCompleted");
 
         data.adventureEndTick = nbt.getLong("AdventureEndTick");
+        data.trainingLastRewardTick = nbt.getLong("trainingLastRewardTick");
+        data.sleeping = nbt.getBoolean("Sleeping");
+        data.sleepingSinceTick = nbt.getLong("SleepingSinceTick");
+
 
         return data;
     }

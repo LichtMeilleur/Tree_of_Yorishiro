@@ -35,6 +35,7 @@ public class TreeofYorishiroMod implements ModInitializer {
         ModItemGroups.register();
 
         ModFeatures.register();
+        ModPlacedFeatures.register();
         ModWorldGeneration.generateWorldGen();
 
 

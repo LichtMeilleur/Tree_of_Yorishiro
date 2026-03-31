@@ -91,6 +91,10 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
             new Identifier("tree_of_yorishiro", "adventure_rare")
     );
 
+    private static final long TRAINING_DURATION = 5000L;          // 5時間
+    private static final long TRAINING_REWARD_INTERVAL = 500L;    // 30分ごと
+    private static final long ADVENTURE_DURATION = 8000L;         // 8時間
+
 
     public java.util.UUID getTreeId() {
         return treeId;
@@ -142,6 +146,7 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         tickGrowAnimation(be);
         tickTraining(be);
         tickAdventure(be);
+        tickSleep(be);
 
         if (be.summonCheckCooldown > 0) {
             be.summonCheckCooldown--;
@@ -367,13 +372,10 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         data.setTrainingLevel(level);
 
         long now = this.world.getTime();
-        long duration = switch (level) {
-            case 1 -> 20L * 10L;
-            case 2 -> 20L * 20L;
-            case 3 -> 20L * 30L;
-            default -> 20L * 10L;
-        };
-        data.setTrainingEndTick(now + duration);
+        data.setTrainingEndTick(now + TRAINING_DURATION);
+        data.setTrainingLastRewardTick(now);
+        data.setSleeping(false);
+        data.setSleepingSinceTick(0L);
 
 
 
@@ -462,41 +464,36 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
             if (!data.isTraining()) continue;
             if (data.isTrainingCompleted()) continue;
 
-            if (now >= data.getTrainingEndTick()) {
-                switch (data.getTrainingType()) {
-                    case "MEAL" -> {
-                        data.setGenki(Math.min(100, data.getGenki() + 10 * data.getTrainingLevel()));
-                        data.setStress(Math.max(0, data.getStress() - 8 * data.getTrainingLevel()));
-                    }
-                    case "STUDY" -> {
-                        data.setKashikosa(data.getKashikosa() + data.getTrainingLevel());
-                        data.setStress(Math.min(100, data.getStress() + 3 * data.getTrainingLevel()));
-                        data.setGenki(Math.max(0, data.getGenki() - 2 * data.getTrainingLevel()));
-                    }
-                    case "EXERCISE" -> {
-                        data.setChikara(data.getChikara() + data.getTrainingLevel());
-                        data.setStress(Math.min(100, data.getStress() + 4 * data.getTrainingLevel()));
-                        data.setGenki(Math.max(0, data.getGenki() - 3 * data.getTrainingLevel()));
-                    }
-                    case "PLAY" -> {
-                        data.setStress(Math.max(0, data.getStress() - 10 * data.getTrainingLevel()));
-                        data.setGenki(Math.min(100, data.getGenki() + 4 * data.getTrainingLevel()));
-                    }
-                }
+            long lastReward = data.getTrainingLastRewardTick();
+            if (lastReward <= 0L) {
+                data.setTrainingLastRewardTick(now);
+                lastReward = now;
+                changed = true;
+            }
 
+            while (now >= lastReward + TRAINING_REWARD_INTERVAL) {
+                applyTrainingTickReward(data);
+                lastReward += TRAINING_REWARD_INTERVAL;
+                data.setTrainingLastRewardTick(lastReward);
+                changed = true;
+            }
+
+            if (now >= data.getTrainingEndTick()) {
                 data.setTraining(false);
                 data.setTrainingCompleted(true);
                 data.setAnimState(ChibishiroAnimState.IDLE);
 
-                // ← ここでだけリセット
                 data.setTrainingType("");
                 data.setTrainingLevel(0);
                 data.setTrainingEndTick(0L);
+                data.setTrainingLastRewardTick(0L);
 
                 if (data.getEntityUuid() != null && be.world instanceof ServerWorld sw) {
                     Entity e = sw.getEntity(data.getEntityUuid());
                     if (e instanceof ChibishiroEntity chibi) {
                         chibi.setDisplayFoodStack(ItemStack.EMPTY);
+                        chibi.setAnimState(ChibishiroAnimState.IDLE);
+                        chibi.setAnimTicks(0);
                     }
                 }
 
@@ -613,7 +610,8 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         if (!canStartAdventure()) return;
 
         long now = this.world.getTime();
-        long duration = 20L * 30L;
+        long duration = ADVENTURE_DURATION;
+
 
         for (TreeChibishiroData data : this.chibis) {
             data.setAdventuring(true);
@@ -872,6 +870,93 @@ public class TreeOfYorishiroBlockEntity extends BlockEntity implements GeoBlockE
         }
 
         return count;
+    }
+    private static void applyTrainingTickReward(TreeChibishiroData data) {
+        int level = Math.max(1, data.getTrainingLevel());
+
+        switch (data.getTrainingType()) {
+            case "MEAL" -> {
+                data.setGenki(Math.min(100, data.getGenki() + level));
+                data.setStress(Math.max(0, data.getStress() - level));
+            }
+            case "STUDY" -> {
+                data.setKashikosa(data.getKashikosa() + level);
+                data.setStress(Math.min(100, data.getStress() + level));
+                data.setGenki(Math.max(0, data.getGenki() - 1));
+            }
+            case "EXERCISE" -> {
+                data.setChikara(data.getChikara() + level);
+                data.setStress(Math.min(100, data.getStress() + level));
+                data.setGenki(Math.max(0, data.getGenki() - level));
+            }
+            case "PLAY" -> {
+                data.setStress(Math.max(0, data.getStress() - (1 + level)));
+                data.setGenki(Math.min(100, data.getGenki() + 1));
+            }
+        }
+    }
+
+    private static boolean isNight(World world) {
+        long dayTime = world.getTimeOfDay() % 24000L;
+        return dayTime >= 13000L && dayTime < 23000L;
+    }
+
+    private static boolean isMorning(World world) {
+        long dayTime = world.getTimeOfDay() % 24000L;
+        return dayTime >= 0L && dayTime < 1000L;
+    }
+
+    private static void tickSleep(TreeOfYorishiroBlockEntity be) {
+        if (be.world == null || be.world.isClient()) return;
+
+        boolean changed = false;
+        boolean night = isNight(be.world);
+        boolean morning = isMorning(be.world);
+
+        for (TreeChibishiroData data : be.chibis) {
+            if (data.isAdventuring()) continue;
+            if (data.isTraining()) continue;
+
+            if (night) {
+                if (!data.isSleeping()) {
+                    data.setSleeping(true);
+                    data.setSleepingSinceTick(be.world.getTimeOfDay());
+
+                    if (data.getEntityUuid() != null && be.world instanceof ServerWorld sw) {
+                        Entity e = sw.getEntity(data.getEntityUuid());
+                        if (e instanceof ChibishiroEntity chibi) {
+                            chibi.getNavigation().stop();
+                            chibi.startSleepTask();
+                        }
+                    }
+
+                    changed = true;
+                }
+            } else if (data.isSleeping()) {
+                if (morning) {
+                    data.setGenki(Math.min(100, data.getGenki() + 25));
+                    data.setStress(Math.max(0, data.getStress() - 10));
+                }
+
+                data.setSleeping(false);
+                data.setSleepingSinceTick(0L);
+
+                if (data.getEntityUuid() != null && be.world instanceof ServerWorld sw) {
+                    Entity e = sw.getEntity(data.getEntityUuid());
+                    if (e instanceof ChibishiroEntity chibi) {
+                        chibi.setAnimState(ChibishiroAnimState.IDLE);
+                        chibi.setAnimTicks(0);
+                    }
+                }
+
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            be.markDirty();
+            be.world.updateListeners(be.pos, be.getCachedState(), be.getCachedState(), 3);
+        }
     }
 
 }

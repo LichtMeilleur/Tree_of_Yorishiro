@@ -32,17 +32,10 @@ public class ModBlocks {
 
     public static final Block YORISHIRO_STONE = register("yorishiro_stone",
             new Block(AbstractBlock.Settings.create()
-                    .strength(1.5f)
+                    .strength(0.6f)
                     .sounds(BlockSoundGroup.STONE)
-                    .requiresTool()));
+                    .nonOpaque()));
 
-    private static Block register(String name, Block block) {
-        return Registry.register(Registries.BLOCK, TreeofYorishiroMod.id(name), block);
-    }
-
-    public static void register() {
-        TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering blocks");
-    }
     public static final Block YORISHIRO_TRUNK_COLLISION = registerBlockWithoutItem(
             "yorishiro_trunk_collision",
             new YorishiroTrunkCollisionBlock(FabricBlockSettings.create()
@@ -50,8 +43,29 @@ public class ModBlocks {
                     .dropsNothing()
             )
     );
+
+    public static final Block SYOKUNIN_DESK_COLLISION = registerBlockWithoutItem(
+            "syokunin_desk_collision",
+            new SyokuninDeskCollisionBlock(FabricBlockSettings.create()
+                    .strength(0.1F)
+                    .nonOpaque()
+            )
+    );
+
+    public static final Block SYOKUNIN_DESK = register("syokunin_desk",
+            new SyokuninDeskBlock(AbstractBlock.Settings.create()
+                    .strength(2.0f)
+                    .nonOpaque()));
+
+    private static Block register(String name, Block block) {
+        return Registry.register(Registries.BLOCK, TreeofYorishiroMod.id(name), block);
+    }
+
     private static Block registerBlockWithoutItem(String name, Block block) {
         return Registry.register(Registries.BLOCK, TreeofYorishiroMod.id(name), block);
     }
 
+    public static void register() {
+        TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering blocks");
+    }
 }
